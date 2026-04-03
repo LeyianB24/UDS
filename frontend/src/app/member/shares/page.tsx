@@ -94,7 +94,7 @@ export default function MemberShares() {
                         grid: { display: false },
                         ticks: {
                             color: tickColor,
-                            font: { family: "'Plus Jakarta Sans',sans-serif", size: 10, weight: '600' },
+                            font: { family: "'Plus Jakarta Sans',sans-serif", size: 10 },
                             maxTicksLimit: 6
                         }
                     },
@@ -102,7 +102,7 @@ export default function MemberShares() {
                         grid: { color: gridColor },
                         ticks: {
                             color: tickColor,
-                            font: { family: "'Plus Jakarta Sans',sans-serif", size: 10, weight: '600' },
+                            font: { family: "'Plus Jakarta Sans',sans-serif", size: 10 },
                             callback: function(v: any) { return (v >= 1000) ? (v/1000) + 'k' : v; }
                         },
                         beginAtZero: true

@@ -78,8 +78,8 @@ export default function MemberContributions() {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { stacked: true, grid: { display: false }, ticks: { color: tickColor, font: {family:"'Plus Jakarta Sans',sans-serif", size:10, weight:'600'} } },
-                        y: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor, callback: (v: any) => v >= 1000 ? v/1000+'k' : v, font: {family:"'Plus Jakarta Sans',sans-serif", size:10, weight:'600'} }, border: { display: false } }
+                        x: { stacked: true, grid: { display: false }, ticks: { color: tickColor, font: {family:"'Plus Jakarta Sans',sans-serif", size:10} } },
+                        y: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor, callback: (v: any) => v >= 1000 ? v/1000+'k' : v, font: {family:"'Plus Jakarta Sans',sans-serif", size:10} }, border: { display: false } }
                     }
                 }
             });
