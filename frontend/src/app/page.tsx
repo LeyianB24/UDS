@@ -13,7 +13,7 @@ import {
   Lock,
   Users,
   Wallet2,
-  Buildings,
+  Building2,
   ArrowUpRight,
   PiggyBank,
   HeartPulse,
@@ -168,7 +168,7 @@ export default function LandingPage() {
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
                 { n: 1, icon: Wallet2, title: 'Mobilization', desc: 'Members contribute monthly deposits and share capital, forming a strong fund base.' },
-                { n: 2, icon: Buildings, title: 'Investment', desc: 'Funds are invested in high-yield assets: fleets, real estate, and agribusiness.' },
+                { n: 2, icon: Building2, title: 'Investment', desc: 'Funds are invested in high-yield assets: fleets, real estate, and agribusiness.' },
                 { n: 3, icon: ArrowUpRight, title: 'Returns', desc: 'Assets generate revenue daily through fares, rent, farm income, and loan interest.' },
                 { n: 4, icon: PieChart, title: 'Dividends', desc: 'Profits are returned to members yearly as dividends and interest on savings.', featured: true }
               ].map((step, i) => (
@@ -244,7 +244,7 @@ export default function LandingPage() {
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { icon: Buildings, title: 'Real Estate', desc: 'Modern rental units and commercial plots generating passive monthly income.' },
+                { icon: Building2, title: 'Real Estate', desc: 'Modern rental units and commercial plots generating passive monthly income.' },
                 { icon: Bus, title: 'Matatu Fleet', desc: 'A modern, profitable fleet operating on the region\'s highest-demand routes.' },
                 { icon: Flower2, title: 'Agribusiness', desc: 'Strategic investments in crop farming and agricultural value chains.' },
                 { icon: Fuel, title: 'Fuel Stations', desc: 'High-traffic fueling points providing reliable daily revenue.' }
