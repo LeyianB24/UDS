@@ -1,11 +1,4 @@
-<?php
-/**
- * api/v1/auth_status.php
- * Returns the current session status (admin, member, or guest).
- */
-
-if (session_status() === PHP_SESSION_NONE) session_start();
-
+require_once __DIR__ . '/api_init.php';
 require_once __DIR__ . '/../../config/app.php';
 
 $response = [
@@ -38,6 +31,4 @@ if (isset($_SESSION['admin_id'])) {
     ];
 }
 
-header('Content-Type: application/json');
-echo json_encode($response);
-exit;
+api_success($response);

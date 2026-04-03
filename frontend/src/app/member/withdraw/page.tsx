@@ -210,7 +210,7 @@ export default function WithdrawalPage() {
            ) : status === 'success' ? (
              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
                 <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                   <CheckCircle2 size={48} />
+                   <CheckCircle size={48} />
                 </div>
                 <h3 className="text-2xl font-black text-[#0b2419] mb-4">Transaction Queued</h3>
                 <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs mx-auto mb-10">
@@ -245,7 +245,7 @@ export default function WithdrawalPage() {
                <Smartphone size={14} /> 2FA Secured
             </div>
             <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600">
-               <CheckCircle2 size={14} /> Real-Time Updates
+               <CheckCircle size={14} /> Real-Time Updates
             </div>
         </div>
       </div>

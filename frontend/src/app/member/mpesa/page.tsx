@@ -12,13 +12,13 @@ import {
   Heart, 
   Landmark, 
   X,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle,
   ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -213,7 +213,7 @@ export default function MpesaCheckoutPage() {
                  {status === 'success' && (
                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="space-y-8">
                       <div className="w-24 h-24 mx-auto bg-[#39B54A] rounded-full flex items-center justify-center text-white shadow-[0_0_50px_rgba(57,181,74,0.5)]">
-                         <CheckCircle2 size={48} />
+                         <CheckCircle size={48} />
                       </div>
                       <div>
                          <h3 className="text-xl font-black text-white mb-2">Request Successful</h3>
