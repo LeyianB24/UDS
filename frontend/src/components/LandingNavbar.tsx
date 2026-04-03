@@ -11,8 +11,10 @@ export function LandingNavbar() {
     useEffect(() => {
         fetchApi('auth_status').then(res => setUser(res));
         // Client-side theme init
-        const storedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(storedTheme as 'light' | 'dark');
+        const storedTheme = (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+        if (storedTheme !== 'light') {
+            setTheme(storedTheme);
+        }
     }, []);
 
     const toggleTheme = () => {

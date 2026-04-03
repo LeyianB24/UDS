@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -25,6 +26,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full">
         {children}
+        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" strategy="lazyOnload" />
       </body>
     </html>
   );
