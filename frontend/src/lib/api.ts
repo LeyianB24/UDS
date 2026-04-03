@@ -40,16 +40,32 @@ export const fetchApi = async <T = any>(endpoint: string, method: 'GET' | 'POST'
 export const apiFetch = async (url: string, options: RequestInit = {}): Promise<any> => {
   const base = process.env.NEXT_PUBLIC_PHP_BASE || 'http://localhost/UDS';
   const fullUrl = url.startsWith('http') ? url : `${base}${url}`;
-  const res = await fetch(fullUrl, {
-    credentials: 'include',
-    headers: { 'Accept': 'application/json', ...(options.headers || {}) },
-    ...options,
-  });
-  const json = await res.json();
-  if (json.status === 'error' || json.success === false) {
-    throw new Error(json.message || 'API error');
+  
+  try {
+    const res = await fetch(fullUrl, {
+      credentials: 'include',
+      headers: { 'Accept': 'application/json', ...(options.headers || {}) },
+      ...options,
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`API Fetch HTTP Error [${res.status}]:`, errorText);
+      throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
+    }
+
+    const json = await res.json();
+    if (json.status === 'error' || json.success === false) {
+      throw new Error(json.message || 'API error');
+    }
+    return json;
+  } catch (error: any) {
+    console.error(`API Fetch Exception [${fullUrl}]:`, error.message);
+    if (error.message === 'Failed to fetch') {
+      throw new Error(`Failed to reach the server at ${fullUrl}. Please ensure your PHP backend (XAMPP/Apache) is running and accessible.`);
+    }
+    throw error;
   }
-  return json;
 };
 
 export default api;

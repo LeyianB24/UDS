@@ -88,10 +88,19 @@ export function MemberSidebar() {
                     <Link href="/member/notifications" className={`hd-nav-link ${isActive(['/member/notifications'])}`}>
                         <span className="hd-nav-icon"><i className="bi bi-bell-fill"></i></span><span className="hd-nav-text">Notifications</span>
                     </Link>
+                    <Link href="/member/messages" className={`hd-nav-link ${isActive(['/member/messages'])}`}>
+                        <span className="hd-nav-icon"><i className="bi bi-chat-dots-fill"></i></span><span className="hd-nav-text">Messages</span>
+                    </Link>
 
                     <span className="hd-section-label">Account</span>
                     <Link href="/member/profile" className={`hd-nav-link ${isActive(['/member/profile'])}`}>
                         <span className="hd-nav-icon"><i className="bi bi-person-circle"></i></span><span className="hd-nav-text">My Profile</span>
+                    </Link>
+                    <Link href="/member/settings" className={`hd-nav-link ${isActive(['/member/settings'])}`}>
+                        <span className="hd-nav-icon"><i className="bi bi-gear-fill"></i></span><span className="hd-nav-text">Account Settings</span>
+                    </Link>
+                    <Link href="/member/support" className={`hd-nav-link ${isActive(['/member/support'])}`}>
+                        <span className="hd-nav-icon"><i className="bi bi-question-circle-fill"></i></span><span className="hd-nav-text">Support Hub</span>
                     </Link>
                 </div>
             </div>

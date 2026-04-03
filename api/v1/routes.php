@@ -62,6 +62,11 @@ $routes = [
     'GET:member_welfare'        => ['file' => 'member_welfare.php',        'auth' => 'member'],
     'POST:member_settings'       => ['file' => 'member_settings.php',       'auth' => 'member'],
     'GET:member_contributions'  => ['file' => 'member_contributions.php',  'auth' => 'member'],
+    'GET:member_messages'       => ['file' => 'member_messages.php',       'auth' => 'member'],
+    'POST:member_messages'      => ['file' => 'member_messages.php',       'auth' => 'member'],
+    'GET:member_support'        => ['file' => 'member_support.php',        'auth' => 'member'],
+    'POST:member_support'       => ['file' => 'member_support.php',        'auth' => 'member'],
+    'GET:logout'                => ['file' => 'logout.php',                'auth' => 'none'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────
