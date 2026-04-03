@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import Chart from 'chart.js/auto';
 import './dashboard.css';
 
@@ -23,12 +23,8 @@ export default function MemberDashboard() {
     useEffect(() => {
         const loadDashboard = async () => {
             try {
-                const res = await fetchApi('member_dashboard', 'GET');
-                if (res.status === 'success') {
-                    setData(res.data);
-                } else {
-                    setError('Failed to load dashboard data');
-                }
+                const res = await apiFetch('/api/v1/member_dashboard.php');
+                setData(res.data);
             } catch (err: any) {
                 setError(err.message || 'Error connecting to server');
             } finally {

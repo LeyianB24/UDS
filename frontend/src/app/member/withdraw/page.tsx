@@ -4,13 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Wallet, 
   PiggyBank, 
-  CashStack, 
+  Banknote, 
   PieChart, 
   HeartPulse, 
   ArrowLeft, 
   Smartphone, 
   ShieldCheck, 
-  CheckCircle2, 
+  CheckCircle, 
   AlertCircle,
   HelpCircle,
   ArrowRightLeft,
@@ -18,7 +18,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -48,7 +48,7 @@ export default function WithdrawalPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const res = await fetchApi(`withdraw?type=${type}`);
+    const res = await apiFetch(`/api/v1/withdraw.php?type=${type}`);
     if (res.status === 'success') {
       setData(res.data);
       setPhone(res.data.phone);
@@ -64,10 +64,14 @@ export default function WithdrawalPage() {
     e.preventDefault();
     setProcessing(true);
     
-    const res = await fetchApi('withdraw', 'POST', {
-      amount: parseFloat(amount),
-      phone,
-      type
+    const formData = new FormData();
+    formData.append('amount', amount);
+    formData.append('phone', phone);
+    formData.append('type', type);
+    
+    const res = await apiFetch('/api/v1/withdraw.php', { 
+      method: 'POST', 
+      body: formData 
     });
 
     if (res.status === 'success') {
@@ -96,7 +100,7 @@ export default function WithdrawalPage() {
   const icons: Record<string, any> = {
     wallet: Wallet,
     savings: PiggyBank,
-    loans: CashStack,
+    loans: Banknote,
     shares: PieChart,
     welfare: HeartPulse
   };
