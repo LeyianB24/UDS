@@ -1,0 +1,30 @@
+# USMS Git Inhibition List
+
+# Dependencies
+/vendor/
+/composer.lock
+
+# Environment & Config
+.env
+config/database.php
+
+# Sensitive Assets & Uploads
+/uploads/
+/cert/
+/member/uploads/
+/public/uploads/
+/storage/
+
+# Development Artifacts
+*.log
+*.txt
+*.json
+*.pdf
+!composer.json
+
+# IDEs
+.vscode/
+.vs/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "Bezalel"]
+	url = https://github.com/LeyianB24/Solidity.git
+	fetch = +refs/heads/*:refs/remotes/Bezalel/*
+[branch "main"]
+	vscode-merge-base = Bezalel/main
+	remote = origin
+	merge = refs/heads/main
+[remote "origin"]
+	url = https://github.com/LeyianB24/umoja-sacco.git
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[lfs]
+	repositoryformatversion = 0
