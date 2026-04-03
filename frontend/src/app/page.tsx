@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import Link from 'next/link';
 import { LandingNavbar } from '@/components/LandingNavbar';
+import { LandingFooter } from '@/components/LandingFooter';
 import './landing.css';
 
 export default function LandingPage() {
@@ -271,6 +271,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            <LandingFooter />
         </div>
     );
 }
