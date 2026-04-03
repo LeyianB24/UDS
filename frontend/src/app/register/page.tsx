@@ -40,7 +40,7 @@ export default function RegisterPage() {
         try {
             // using exact axios call without wrappers so multipart/form-data doesn't get coerced to json
             const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/UDS/api/v1/routes.php';
-            const res = await axios.post(API_BASE_URL + '?action=register', formData);
+            const res = await axios.post(API_BASE_URL + '?action=register', formData, { withCredentials: true });
             
             if (res.data.status === 'error') {
                 if (Array.isArray(res.data.message)) {

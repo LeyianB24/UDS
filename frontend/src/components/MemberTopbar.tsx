@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 
 export function MemberTopbar() {
     const pathname = usePathname();
