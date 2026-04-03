@@ -72,6 +72,7 @@ $routes = [
     'GET:members'               => ['file' => 'members.php',               'auth' => 'admin'],
     
     // Member Facing (Support both Admin & Member)
+    'GET:member_dashboard'      => ['file' => 'member_dashboard.php',      'auth' => 'member'],
     'GET:member_savings'        => ['file' => 'member_savings.php',        'auth' => 'both'],
     'GET:member_shares'         => ['file' => 'member_shares.php',         'auth' => 'both'],
     'GET:member_loans'          => ['file' => 'member_loans.php',          'auth' => 'both'],
