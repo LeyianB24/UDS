@@ -56,6 +56,18 @@ export function MemberTopbar() {
         };
     }, [loadTopbarData]);
 
+    const toggleTheme = () => {
+        const next = theme === 'dark' ? 'light' : 'dark';
+        setTheme(next);
+        document.documentElement.setAttribute('data-bs-theme', next);
+        if (next === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', next);
+    };
+
     const handleLogout = async () => {
         if (!confirm('Are you sure you want to sign out?')) return;
         try {
