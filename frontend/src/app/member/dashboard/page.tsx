@@ -61,13 +61,19 @@ export default function MemberDashboard() {
         setLoading(true);
         setError('');
         try {
-            const res: any = await apiFetch('/api/v1/member_dashboard.php');
-            setData(res.data);
-            setUsingMock(false);
+            // Using the updated axios-based apiFetch
+            const res = await apiFetch('/api/v1/member_dashboard.php');
+            if (res && res.data) {
+                setData(res.data);
+                setUsingMock(false);
+            } else {
+                throw new Error("Invalid response format");
+            }
         } catch (err: any) {
             setData(MOCK_DATA);
             setUsingMock(true);
-            console.warn("Backend unavailable, using mock data:", err.message);
+            const msg = err.message || "Unknown API error";
+            console.warn(`[Dashboard] Backend unreachable, falling back to mock:`, msg);
         } finally {
             setLoading(false);
         }

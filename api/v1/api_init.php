@@ -17,12 +17,12 @@ $allowed_origins = [
 
 if (in_array($http_origin, $allowed_origins)) {
     header("Access-Control-Allow-Origin: $http_origin");
-} elseif (empty($http_origin)) {
-    // If no origin (e.g. same origin or CURL), allow all for now
-    header("Access-Control-Allow-Origin: *");
+} elseif (!empty($http_origin)) {
+    // If unknown origin, default to localhost:3000 for safety instead of *
+    header("Access-Control-Allow-Origin: http://localhost:3000");
 } else {
-    // Restrictive default for other unknown origins
-    // header("Access-Control-Allow-Origin: http://localhost:3000"); 
+    // If no origin (e.g. CURL or SSR), default to localhost:3000
+    header("Access-Control-Allow-Origin: http://localhost:3000");
 }
 
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
