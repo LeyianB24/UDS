@@ -60,11 +60,11 @@ export function LandingNavbar() {
 
                             {user?.authenticated ? (
                                 <li className="dropdown">
-                                    <Link className="nb-account-trigger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <a className="nb-account-trigger" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <span className="nb-avatar"><i className="bi bi-person-fill"></i></span>
                                         Account
                                         <i className="bi bi-chevron-down" style={{ fontSize: '0.6rem', opacity: 0.7, marginLeft: '6px' }}></i>
-                                    </Link>
+                                    </a>
                                     <ul className="dropdown-menu nb-dropdown dropdown-menu-end">
                                         <li>
                                             <Link className="nb-dropdown-item" href={user.portal === 'admin' ? '/admin/dashboard' : '/member/dashboard'}>
