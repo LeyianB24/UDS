@@ -3,30 +3,33 @@
 @tailwind utilities;
 
 :root {
-  /* HD Legacy Palette: Forest & Lime */
-  --forest: #0b2419;
-  --forest-mid: #154330;
-  --forest-soft: #1d6044;
-  --lime: #a3e635;
-  --lime-trans: rgba(163, 230, 53, 0.14);
-  
-  --sb-bg: #ffffff;
-  --sb-bg-alt: #f7fbf8;
-  --sb-border: rgba(11, 36, 25, 0.07);
-  --sb-text: #6b8a7a;
-  --sb-ink: #0b2419;
-  --sb-accent: #b0ccc2;
+  /* Umoja Sacco Professional Tokens (from admin.css) */
+  --brand-forest:      #0F392B;
+  --brand-forest-mid:  #134e3b;
+  --brand-lime:        #D0F764;
+  --brand-lime-hover:  #bce04b;
+  --brand-gold:        #E2B34A;
 
-  --background: #f8fafc;
-  --foreground: #0b2419;
+  --bg-primary:     #f0f7f4;
+  --bg-surface:     #FFFFFF;
+  --text-main:      #111827;
+  --text-primary:   #1e293b;
+  --text-muted:     #6B7280;
+  --border-color:   #E5E7EB;
+
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
 }
 
 [data-bs-theme="dark"] {
-  --sb-bg: #0d1d14;
-  --sb-bg-alt: #0a1810;
-  --sb-border: rgba(255, 255, 255, 0.07);
-  --sb-text: #5a8a6e;
-  --sb-ink: #d8eee2;
+  --bg-primary:        #0b1210;
+  --bg-surface:        #13241f;
+  --text-main:         #F9FAFB;
+  --text-muted:        #9CA3AF;
+  --border-color:      #1F2937;
 }
 
 body {
@@ -36,8 +39,31 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--sb-border); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--sb-text); }
+/* Replicating Legacy Stat Card */
+.stat-card {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Section Header pattern */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--brand-forest);
+}
