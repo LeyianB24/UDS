@@ -81,6 +81,10 @@ $routes = [
     'POST:member_profile'       => ['file' => 'member_profile.php',        'auth' => 'both'],
     'GET:withdraw'              => ['file' => 'withdraw.php',              'auth' => 'member'],
     'POST:withdraw'             => ['file' => 'withdraw.php',              'auth' => 'member'],
+    'GET:member_transactions'   => ['file' => 'member_transactions.php',   'auth' => 'member'],
+    'GET:member_notifications'  => ['file' => 'member_notifications.php',  'auth' => 'member'],
+    'POST:member_notifications' => ['file' => 'member_notifications.php',  'auth' => 'member'],
+    'GET:member_welfare'        => ['file' => 'member_welfare.php',        'auth' => 'member'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────

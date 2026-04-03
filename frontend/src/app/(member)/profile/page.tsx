@@ -255,6 +255,7 @@ export default function MemberProfilePage() {
                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={16} />
                            <input 
                              type="email" 
+                             title="Email Address"
                              className="w-full h-12 bg-slate-50 border-none rounded-2xl pl-12 pr-4 text-xs font-black focus:ring-2 focus:ring-emerald-500/10"
                              value={form.email}
                              onChange={e => setForm({...form, email: e.target.value})}
