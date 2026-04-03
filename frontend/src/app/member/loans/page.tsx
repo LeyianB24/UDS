@@ -1,459 +1,200 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
-import './loans.css';
-
-const ks = (v: number) => `KES ${v >= 1000 ? (v / 1000).toFixed(1) + 'K' : v.toFixed(0)}`;
-const kf = (v: number) => `KES ${v.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+import { MemberApi, LoanData } from '@/lib/api/member';
+import { motion } from 'framer-motion';
 
 export default function LoansPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<LoanData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    // Loan application form state
-    const [applyForm, setApplyForm] = useState({
-        loan_type: 'emergency',
-        amount: '',
-        duration_months: '12',
-        guarantor_1: '',
-        guarantor_2: '',
-        notes: ''
-    });
-    const [applyLoading, setApplyLoading] = useState(false);
-    const [applyMsg, setApplyMsg] = useState<{ type: string; text: string } | null>(null);
-
-    // Wallet repay form state
-    const [repayAmount, setRepayAmount] = useState('');
-    const [repayLoading, setRepayLoading] = useState(false);
-    const [repayMsg, setRepayMsg] = useState<{ type: string; text: string } | null>(null);
 
     useEffect(() => {
-        apiFetch('/api/v1/member_loans.php')
-            .then(r => { setData(r); setLoading(false); })
-            .catch(e => { setError(e.message); setLoading(false); });
+        MemberApi.getLoans()
+            .then(res => setData(res))
+            .finally(() => setLoading(false));
     }, []);
 
-    const handleApply = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setApplyLoading(true); setApplyMsg(null);
-        try {
-            const fd = new FormData();
-            Object.entries(applyForm).forEach(([k, v]) => fd.append(k, v));
-            const res = await apiFetch('/api/v1/apply_loan.php', { method: 'POST', body: fd });
-            setApplyMsg({ type: 'success', text: res.message || 'Application submitted!' });
-            setTimeout(() => window.location.reload(), 1800);
-        } catch (err: any) {
-            setApplyMsg({ type: 'error', text: err.message || 'Failed to apply.' });
-        } finally { setApplyLoading(false); }
-    };
-
-    const handleRepay = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setRepayLoading(true); setRepayMsg(null);
-        try {
-            const fd = new FormData();
-            fd.append('action', 'repay_wallet');
-            fd.append('amount', repayAmount);
-            const res = await apiFetch('/api/v1/member_loans.php', { method: 'POST', body: fd });
-            setRepayMsg({ type: 'success', text: res.message || 'Repayment successful!' });
-            setTimeout(() => window.location.reload(), 1800);
-        } catch (err: any) {
-            setRepayMsg({ type: 'error', text: err.message || 'Repayment failed.' });
-        } finally { setRepayLoading(false); }
-    };
-
-    if (loading) {
+    if (loading || !data) {
         return (
-            <div className="loans-page">
-                <div className="loans-loading">
-                    <div className="loans-spinner"></div>
-                    <p>Loading loan portfolio...</p>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="spinner-border text-success" role="status">
+                    <span className="visually-hidden">Loading...</span>
                 </div>
             </div>
         );
     }
 
-    if (error) {
-        return (
-            <div className="loans-page">
-                <div className="loans-error-banner">
-                    <i className="bi bi-exclamation-triangle-fill"></i> {error}
-                </div>
-            </div>
-        );
-    }
-
-    const { balances, active_loan, pending_loan, history, available_guarantors } = data || {};
-    const { total_savings = 0, wallet_balance = 0, max_loan_limit = 0, is_eligible = false } = balances || {};
-    const hasActiveLoan = !!active_loan;
-    const hasPendingLoan = !!pending_loan;
-    const estimatedInterest = parseFloat(applyForm.amount || '0') * 0.12;
-    const estimatedTotal = parseFloat(applyForm.amount || '0') + estimatedInterest;
-
-    const STATUS_COLORS: Record<string, string> = {
-        completed: 'status-completed',
-        disbursed: 'status-disbursed',
-        active: 'status-active',
-        pending: 'status-pending',
-        approved: 'status-approved',
-        rejected: 'status-rejected',
-        settled: 'status-completed',
-    };
+    const { active_loan, limit, history } = data;
 
     return (
-        <div className="loans-page">
-            {/* PAGE HEADER */}
-            <div className="loans-header">
-                <div>
-                    <h2 className="loans-h2">Loan Portfolio</h2>
-                    <p className="loans-sub">Manage your finances and track repayment progress.</p>
-                </div>
-                <div className="loans-hdr-btns">
-                    {wallet_balance > 0 && (
-                        <Link href="/member/withdraw?type=loans" className="btn-ghost-loans">
-                            <i className="bi bi-wallet2"></i> Withdraw Funds
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="pb-5"
+        >
+            {/* HERO */}
+            <div className="sv-hero">
+                <div className="hero-mesh"></div>
+                <div className="hero-dots"></div>
+                <div className="hero-ring r1"></div>
+                <div className="hero-ring r2"></div>
+
+                <div className="hero-inner">
+                    <div className="hero-nav">
+                        <Link href="/member/dashboard" className="hero-back">
+                            <i className="bi bi-arrow-left" style={{ fontSize: '.65rem' }}></i> Dashboard
                         </Link>
-                    )}
-                    {(hasActiveLoan || hasPendingLoan) ? (
-                        <button className="btn-disabled-loans" disabled>
-                            <i className="bi bi-lock-fill"></i> Limit Reached
-                        </button>
-                    ) : (
-                        <button
-                            className="btn-lime-loans"
-                            onClick={() => (document.getElementById('applyModal') as HTMLDialogElement)?.showModal()}
-                        >
-                            <i className="bi bi-plus-lg"></i> Apply for Loan
-                        </button>
-                    )}
-                </div>
-            </div>
+                        <span className="hero-brand-tag">UMOJA SACCO</span>
+                    </div>
 
-            {/* MAIN GRID */}
-            <div className="loans-grid">
-                {/* LEFT: Active Loan + History */}
-                <div className="loans-main">
-                    {/* Pending Alert */}
-                    {hasPendingLoan && (
-                        <div className="loans-alert loans-alert-warn">
-                            <div className="la-ico warn"><i className="bi bi-hourglass-split"></i></div>
-                            <div>
-                                <div className="la-title">Application In Review</div>
-                                <div className="la-sub">Your request for <strong>{kf(pending_loan.amount)}</strong> is currently: <strong style={{ textTransform: 'capitalize' }}>{pending_loan.status}</strong>.</div>
+                    <div className="row align-items-center g-5">
+                        <div className="col-md-6">
+                            <div className="hero-eyebrow"><div className="ey-line"></div> Credit Portfolio</div>
+                            <div className="hero-lbl">Maximum Borrowing Capacity</div>
+                            <div className="hero-amount">
+                                <span className="cur">KES</span>
+                                <span>{limit.toLocaleString()}</span>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Overdue Alert */}
-                    {hasActiveLoan && active_loan.is_overdue && (
-                        <div className="loans-alert loans-alert-danger">
-                            <div className="la-ico danger"><i className="bi bi-exclamation-triangle-fill"></i></div>
-                            <div>
-                                <div className="la-title" style={{ color: '#dc2626' }}>Overdue Repayment Detected</div>
-                                <div className="la-sub">Your repayment was due on <strong>{new Date(active_loan.next_repayment_date).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>. Please repay to avoid daily fines.</div>
+                            
+                            <div className="hero-apr-pill" style={{ background: 'rgba(163,230,53,0.11)', border: '1px solid rgba(163,230,53,0.2)', color: '#bff060', padding: '5px 14px', borderRadius: '50px', fontSize: '11px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                                <span className="apr-pulse"></span> 3x Savings Leverage
                             </div>
-                        </div>
-                    )}
-
-                    {/* Active Loan Card */}
-                    {hasActiveLoan ? (
-                        <div className="active-loan-card">
-                            <div className="alc-top">
-                                <div>
-                                    <div className="alc-badge">Active Loan #{active_loan.loan_id}</div>
-                                    <div className="alc-balance">{kf(active_loan.outstanding_balance ?? active_loan.current_balance)}</div>
-                                    <div className="alc-label">Outstanding Balance</div>
-                                </div>
-                                <div className="alc-meta">
-                                    <div>
-                                        <div className="alc-meta-label">Installment / Mo</div>
-                                        <div className="alc-meta-val">{kf((active_loan.total_payable || active_loan.amount) / (active_loan.duration_months || 12))}</div>
-                                    </div>
-                                    {(active_loan.total_fines ?? 0) > 0 && (
-                                        <div>
-                                            <div className="alc-meta-label" style={{ color: '#fbbf24' }}>Late Fines</div>
-                                            <div className="alc-meta-val" style={{ color: '#fbbf24' }}>+{kf(active_loan.total_fines)}</div>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <div className="alc-meta-label">Interest Rate</div>
-                                        <div className="alc-meta-val">{active_loan.interest_rate}% p.a</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="alc-progress-section">
-                                <div className="alc-progress-header">
-                                    <span>Repayment Progress</span>
-                                    <span>{(active_loan.progress_percent ?? 0).toFixed(0)}%</span>
-                                </div>
-                                <div className="alc-progress-track">
-                                    <div className="alc-progress-fill" style={{ width: `${active_loan.progress_percent ?? 0}%` }}></div>
-                                </div>
-                                {active_loan.guarantors?.length > 0 && (
-                                    <div className="alc-guarantors">Guarantors: {active_loan.guarantors.join(', ')}</div>
+                            
+                            <div className="mt-4 d-flex gap-2 flex-wrap">
+                                {!active_loan ? (
+                                    <Link href="/member/apply-loan" className="btn-lime">
+                                        <i className="bi bi-pencil-square"></i> Apply New Loan
+                                    </Link>
+                                ) : (
+                                    <Link href="/member/repay-loan" className="btn-lime">
+                                        <i className="bi bi-cash-coin"></i> Quick Repay
+                                    </Link>
                                 )}
-                                <div className="alc-paid-info">
-                                    Paid: {kf(active_loan.repaid_amount ?? 0)} of {kf(active_loan.total_payable ?? active_loan.amount)}
-                                </div>
-                            </div>
-                            <div className="alc-actions">
-                                <Link href={`/member/mpesa?type=loan_repayment&loan_id=${active_loan.loan_id}`} className="btn-lime-loans w-full">
-                                    <i className="bi bi-phone"></i> M-Pesa
+                                <Link href="/member/loan-calculator" className="btn-ghost" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                                    <i className="bi bi-calculator"></i> Repayment Calculator
                                 </Link>
-                                <button
-                                    className="btn-outline-loans w-full"
-                                    onClick={() => (document.getElementById('walletRepayModal') as HTMLDialogElement)?.showModal()}
-                                >
-                                    <i className="bi bi-wallet2"></i> Wallet ({kf(wallet_balance)})
-                                </button>
                             </div>
                         </div>
-                    ) : !hasPendingLoan ? (
-                        <div className="eligibility-card">
-                            {is_eligible ? (
-                                <>
-                                    <div className="ec-ico lime"><i className="bi bi-shield-check"></i></div>
-                                    <h3 className="ec-title">You are Eligible!</h3>
-                                    <p className="ec-sub">No active debts. Based on your savings, you qualify for a loan up to:</p>
-                                    <div className="ec-limit">{kf(max_loan_limit)}</div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="ec-ico"><i className="bi bi-clock-history"></i></div>
-                                    <h3 className="ec-title">Build Your Savings</h3>
-                                    <p className="ec-sub">To qualify for a loan, you need active savings. Start saving to unlock up to 3× borrowing power.</p>
-                                    <Link href="/member/mpesa?type=savings" className="btn-lime-loans">Start Saving Now</Link>
-                                </>
-                            )}
-                        </div>
-                    ) : null}
 
-                    {/* Loan History Table */}
-                    <div className="loans-history-card">
-                        <div className="lh-header">
-                            <h6 className="lh-title">Loan History</h6>
-                        </div>
-                        <div className="lh-table-wrap">
-                            <table className="lh-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Type</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                        <th>Balance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(!history || history.length === 0) ? (
-                                        <tr><td colSpan={5} className="lh-empty">No loan history found.</td></tr>
-                                    ) : history.map((h: any, i: number) => (
-                                        <tr key={i}>
-                                            <td className="lh-date">{new Date(h.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                            <td className="lh-type">{h.loan_type?.replace(/_/g, ' ')}</td>
-                                            <td className="lh-amount">{kf(h.amount)}</td>
-                                            <td><span className={`lh-badge ${STATUS_COLORS[h.status] ?? 'status-pending'}`}>{h.status}</span></td>
-                                            <td className="lh-balance">{kf(h.current_balance)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                {/* RIGHT SIDEBAR */}
-                <div className="loans-sidebar">
-                    {/* Wallet Card */}
-                    <div className="loans-side-card loans-side-card-lime">
-                        <div className="lsc-ico lime"><i className="bi bi-wallet2"></i></div>
-                        <div>
-                            <div className="lsc-label">Loan Wallet (Disbursed)</div>
-                            <div className="lsc-val">{kf(wallet_balance)}</div>
-                        </div>
-                        <Link href="/member/withdraw?type=loans&source=loans" className="btn-lime-loans w-full mt-3">
-                            <i className="bi bi-cash-coin"></i> Withdraw to M-Pesa
-                        </Link>
-                    </div>
-
-                    {/* Savings / Limit */}
-                    <div className="loans-side-card">
-                        <div className="lsc-row">
-                            <div className="lsc-ico"><i className="bi bi-safe"></i></div>
-                            <div>
-                                <div className="lsc-label">Total Savings</div>
-                                <div className="lsc-val">{kf(total_savings)}</div>
-                            </div>
-                        </div>
-                        <hr className="lsc-hr" />
-                        <div className="lsc-row">
-                            <div className="lsc-ico lime"><i className="bi bi-graph-up-arrow"></i></div>
-                            <div>
-                                <div className="lsc-label">Max Loan Limit (3×)</div>
-                                <div className="lsc-val lsc-green">{kf(max_loan_limit)}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Terms */}
-                    <div className="loans-side-card loans-side-card-dark">
-                        <h5 className="lsc-dark-title"><i className="bi bi-info-circle"></i> Quick Terms</h5>
-                        <ul className="lsc-terms">
-                            <li><i className="bi bi-check-circle-fill"></i> Interest rate 12% p.a. on reducing balance.</li>
-                            <li><i className="bi bi-check-circle-fill"></i> Loans require 2 active guarantors.</li>
-                            <li><i className="bi bi-check-circle-fill"></i> Processing takes 24-48 hours.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            {/* APPLY LOAN MODAL */}
-            <dialog id="applyModal" className="loans-modal">
-                <div className="lm-inner">
-                    <div className="lm-header">
-                        <div>
-                            <div className="lm-title">New Loan Application</div>
-                            <div className="lm-sub">Customize your loan details</div>
-                        </div>
-                        <button className="lm-close" onClick={() => (document.getElementById('applyModal') as HTMLDialogElement)?.close()}>
-                            <i className="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                    {applyMsg && (
-                        <div className={`lm-msg ${applyMsg.type === 'success' ? 'lm-msg-ok' : 'lm-msg-err'}`}>
-                            <i className={`bi ${applyMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
-                            {applyMsg.text}
-                        </div>
-                    )}
-                    <form onSubmit={handleApply} className="lm-body">
-                        <div className="lm-section">
-                            <div className="lm-step-label"><span className="lm-step-no">1</span> Loan Details</div>
-
-                            <div className="lm-limit-bar-wrap">
-                                <div className="lm-limit-row">
-                                    <span className="lm-limit-label">Limit Usage</span>
-                                    <span className="lm-limit-pct">
-                                        {max_loan_limit > 0 ? ((parseFloat(applyForm.amount || '0') / max_loan_limit) * 100).toFixed(0) : 0}%
-                                    </span>
+                        {active_loan && (
+                            <div className="col-md-6 d-none d-md-block">
+                                <div className="text-center p-4 rounded-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <div className="text-[10px] uppercase font-extrabold tracking-widest text-[#a3e635] mb-3">Active Loan Progress</div>
+                                    <div className="relative w-32 h-32 mx-auto mb-3">
+                                        <svg className="w-full h-full transform -rotate-90">
+                                            <circle cx="64" cy="64" r="58" stroke="rgba(255,255,255,0.05)" strokeWidth="12" fill="transparent" />
+                                            <circle cx="64" cy="64" r="58" stroke="#a3e635" strokeWidth="12" fill="transparent" 
+                                                strokeDasharray={364} 
+                                                strokeDashoffset={364 - (364 * active_loan.progress_percent) / 100}
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                        <div className="absolute inset-0 d-flex flex-column align-items-center justify-content-center text-white">
+                                            <div className="text-xl font-extrabold">{Math.round(active_loan.progress_percent)}%</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-[11px] font-bold text-white opacity-40 uppercase tracking-wider">{active_loan.loan_type.replace(/_/g, ' ')}</div>
                                 </div>
-                                <div className="lm-limit-track">
-                                    <div className="lm-limit-fill" style={{ width: `${Math.min(100, (parseFloat(applyForm.amount || '0') / (max_loan_limit || 1)) * 100)}%` }}></div>
-                                </div>
-                                <div className="lm-limit-max">Max: {kf(max_loan_limit)}</div>
-                            </div>
-
-                            <div className="lm-field">
-                                <label className="lm-label">Loan Category</label>
-                                <select className="lm-select" value={applyForm.loan_type} onChange={e => setApplyForm(p => ({ ...p, loan_type: e.target.value }))}>
-                                    <option value="emergency">Emergency Loan</option>
-                                    <option value="development">Development Loan</option>
-                                    <option value="business">Business Expansion</option>
-                                    <option value="education">Education / School Fees</option>
-                                </select>
-                            </div>
-                            <div className="lm-row2">
-                                <div className="lm-field">
-                                    <label className="lm-label">Amount (KES)</label>
-                                    <input
-                                        type="number" className="lm-input" placeholder="0" required
-                                        value={applyForm.amount}
-                                        onChange={e => setApplyForm(p => ({ ...p, amount: e.target.value }))}
-                                    />
-                                </div>
-                                <div className="lm-field">
-                                    <label className="lm-label">Duration</label>
-                                    <select className="lm-select" value={applyForm.duration_months} onChange={e => setApplyForm(p => ({ ...p, duration_months: e.target.value }))}>
-                                        <option value="3">3 Months</option>
-                                        <option value="6">6 Months</option>
-                                        <option value="12">12 Months</option>
-                                        <option value="18">18 Months</option>
-                                        <option value="24">24 Months</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="lm-section">
-                            <div className="lm-step-label"><span className="lm-step-no">2</span> Guarantors</div>
-                            <div className="lm-field">
-                                <label className="lm-label">First Guarantor</label>
-                                <select className="lm-select" required value={applyForm.guarantor_1} onChange={e => setApplyForm(p => ({ ...p, guarantor_1: e.target.value }))}>
-                                    <option value="">Select a member...</option>
-                                    {available_guarantors?.map((m: any) => (
-                                        <option key={m.member_id} value={m.member_id}>{m.full_name} ({m.national_id})</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="lm-field">
-                                <label className="lm-label">Second Guarantor</label>
-                                <select className="lm-select" required value={applyForm.guarantor_2} onChange={e => setApplyForm(p => ({ ...p, guarantor_2: e.target.value }))}>
-                                    <option value="">Select a member...</option>
-                                    {available_guarantors?.filter((m: any) => String(m.member_id) !== applyForm.guarantor_1).map((m: any) => (
-                                        <option key={m.member_id} value={m.member_id}>{m.full_name} ({m.national_id})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="lm-section">
-                            <div className="lm-step-label"><span className="lm-step-no">3</span> Purpose</div>
-                            <textarea className="lm-textarea" rows={2} placeholder="Briefly describe why you need this loan..." required
-                                value={applyForm.notes} onChange={e => setApplyForm(p => ({ ...p, notes: e.target.value }))}></textarea>
-                        </div>
-
-                        <div className="lm-summary">
-                            <div className="lm-sum-row"><span>Estimated Interest (12%)</span><span className="lm-sum-val">KES {estimatedInterest.toLocaleString()}</span></div>
-                            <hr className="lm-sum-hr" />
-                            <div className="lm-sum-row"><span className="lm-sum-main">Est. Total Payable</span><span className="lm-sum-big">KES {estimatedTotal.toLocaleString()}</span></div>
-                        </div>
-
-                        <button type="submit" className="btn-lime-loans w-full" disabled={applyLoading}>
-                            {applyLoading ? <><i className="bi bi-arrow-repeat"></i> Processing...</> : <>Confirm &amp; Apply <i className="bi bi-send-fill"></i></>}
-                        </button>
-                    </form>
-                </div>
-            </dialog>
-
-            {/* WALLET REPAY MODAL */}
-            {hasActiveLoan && (
-                <dialog id="walletRepayModal" className="loans-modal">
-                    <div className="lm-inner">
-                        <div className="lm-header">
-                            <div>
-                                <div className="lm-title">Repay via Wallet</div>
-                                <div className="lm-sub">Available: {kf(wallet_balance)}</div>
-                            </div>
-                            <button className="lm-close" onClick={() => (document.getElementById('walletRepayModal') as HTMLDialogElement)?.close()}>
-                                <i className="bi bi-x-lg"></i>
-                            </button>
-                        </div>
-                        {repayMsg && (
-                            <div className={`lm-msg ${repayMsg.type === 'success' ? 'lm-msg-ok' : 'lm-msg-err'}`}>
-                                <i className={`bi ${repayMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
-                                {repayMsg.text}
                             </div>
                         )}
-                        <form onSubmit={handleRepay} className="lm-body">
-                            <div className="lm-field">
-                                <label className="lm-label">Amount to Repay (KES)</label>
-                                <input
-                                    type="number" className="lm-input" placeholder="0" required
-                                    min={1} max={Math.min(wallet_balance, active_loan?.current_balance || 0)}
-                                    value={repayAmount}
-                                    onChange={e => setRepayAmount(e.target.value)}
-                                />
-                                <div className="lm-hint">Outstanding: {kf(active_loan?.outstanding_balance ?? 0)}</div>
-                            </div>
-                            <button type="submit" className="btn-lime-loans w-full" disabled={repayLoading}>
-                                {repayLoading ? 'Processing...' : 'Confirm Repayment'}
-                            </button>
-                        </form>
                     </div>
-                </dialog>
-            )}
-        </div>
+                </div>
+            </div>
+
+            {/* STATS */}
+            <div className="stats-float">
+                <div className="row g-3">
+                    <div className="col-md-3">
+                        <div className="sc">
+                            <div className="sc-ico ico-in">
+                                <i className="bi bi-check2-circle"></i>
+                            </div>
+                            <div className="sc-lbl">Repayment Progress</div>
+                            <div className="sc-val">{active_loan ? Math.round(active_loan.progress_percent) : 0}%</div>
+                            <div className="sc-bar"><div className="sc-bar-fill bg-success" style={{ width: `${active_loan ? active_loan.progress_percent : 0}%` }}></div></div>
+                            <div className="sc-meta">Amortization progress</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="sc">
+                            <div className="sc-ico ico-out">
+                                <i className="bi bi-wallet2"></i>
+                            </div>
+                            <div className="sc-lbl">Outstanding Balance</div>
+                            <div className="sc-val">KES {active_loan ? active_loan.current_balance.toLocaleString() : '0.00'}</div>
+                            <div className="sc-bar"><div className="sc-bar-fill bg-danger w-100"></div></div>
+                            <div className="sc-meta">Principals & interest due</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="sc">
+                            <div className="sc-ico ico-warn" style={{ background: 'rgba(217,119,6,0.08)', color: '#d97706' }}>
+                                <i className="bi bi-calendar-event"></i>
+                            </div>
+                            <div className="sc-lbl">Next Repayment</div>
+                            <div className="sc-val">{active_loan ? new Date(active_loan.next_repayment_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }) : 'None'}</div>
+                            <div className="sc-bar"><div className="sc-bar-fill bg-warning w-75"></div></div>
+                            <div className="sc-meta">Scheduled ledger update</div>
+                        </div>
+                    </div>
+                    <div className="col-md-3">
+                        <div className="sc">
+                            <div className="sc-ico ico-in" style={{ background: 'var(--lg)', color: 'var(--lt)' }}>
+                                <i className="bi bi-shield-check"></i>
+                            </div>
+                            <div className="sc-lbl">Total Payable</div>
+                            <div className="sc-val">KES {active_loan ? active_loan.total_payable.toLocaleString() : '0.00'}</div>
+                            <div className="sc-bar"><div className="sc-bar-fill" style={{ background: 'var(--lime)', width: '60%' }}></div></div>
+                            <div className="sc-meta">Total lifetime debt value</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* BODY */}
+            <div className="pg-body">
+                <div className="filter-row">
+                    <div className="sec-label">Loan Lifecycle History</div>
+                </div>
+
+                <div className="txn-card">
+                    <div className="txn-card-head">
+                        <span className="txn-card-title">My Loan History</span>
+                        <span className="txn-card-ct">{history.length} records</span>
+                    </div>
+                    <div>
+                        {history.map((loan, idx) => (
+                            <div key={idx} className="txn-row">
+                                <div className={`trn-dot ${loan.status === 'disbursed' || loan.status === 'active' ? 'ico-in' : 'ico-out'}`} 
+                                     style={{ background: loan.status === 'completed' ? 'rgba(37,99,235,0.1)' : '', color: loan.status === 'completed' ? '#2563eb' : '' }}>
+                                    <i className={`bi ${loan.status === 'completed' ? 'bi-check-all' : loan.status === 'pending' ? 'bi-clock-history' : 'bi-bank'}`}></i>
+                                </div>
+                                <div className="txn-body">
+                                    <div className="txn-name">{loan.loan_type.replace(/_/g, ' ').toUpperCase()}</div>
+                                    <div className="txn-note">
+                                        Status: <span className="text-capitalize text-success fw-bold">{loan.status}</span> · Ref: #{loan.loan_id}
+                                    </div>
+                                </div>
+                                <div className="txn-right">
+                                    <div className="txn-amt text-dark">
+                                        KES {loan.amount.toLocaleString()}
+                                    </div>
+                                    <div className="txn-ts opacity-50 font-bold">
+                                        {loan.status === 'disbursed' ? `Bal: KES ${loan.current_balance.toLocaleString()}` : new Date(loan.created_at).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {history.length === 0 && (
+                            <div className="p-5 text-center text-muted">
+                                <i className="bi bi-inbox fs-1 opacity-25 d-block mb-2"></i>
+                                No loan records found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </motion.div>
     );
 }
