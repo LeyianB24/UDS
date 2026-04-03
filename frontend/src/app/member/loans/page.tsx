@@ -1,499 +1,459 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  ArrowLeft,
-  Wallet,
-  TrendingUp,
-  ShieldCheck,
-  PlusCircle,
-  ArrowUpRight,
-  Hourglass,
-  CheckCircle, 
-  XSquare, 
-  ChevronRight, 
-  Info, 
-  Send, 
-  AlertTriangle,
-  ArrowRight
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { apiFetch } from '@/lib/api';
+import './loans.css';
 
-export default function MemberLoansPage() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [showApplyModal, setShowApplyModal] = useState(false);
-  const [formData, setFormData] = useState({
-    loan_type: 'emergency',
-    amount: '',
-    duration_months: '12',
-    notes: '',
-    guarantor_1: '',
-    guarantor_2: ''
-  });
+const ks = (v: number) => `KES ${v >= 1000 ? (v / 1000).toFixed(1) + 'K' : v.toFixed(0)}`;
+const kf = (v: number) => `KES ${v.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const res = await fetchApi('member_loans');
-    if (res.status === 'success') {
-      setData(res.data);
+export default function LoansPage() {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Loan application form state
+    const [applyForm, setApplyForm] = useState({
+        loan_type: 'emergency',
+        amount: '',
+        duration_months: '12',
+        guarantor_1: '',
+        guarantor_2: '',
+        notes: ''
+    });
+    const [applyLoading, setApplyLoading] = useState(false);
+    const [applyMsg, setApplyMsg] = useState<{ type: string; text: string } | null>(null);
+
+    // Wallet repay form state
+    const [repayAmount, setRepayAmount] = useState('');
+    const [repayLoading, setRepayLoading] = useState(false);
+    const [repayMsg, setRepayMsg] = useState<{ type: string; text: string } | null>(null);
+
+    useEffect(() => {
+        apiFetch('/api/v1/member_loans.php')
+            .then(r => { setData(r); setLoading(false); })
+            .catch(e => { setError(e.message); setLoading(false); });
+    }, []);
+
+    const handleApply = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setApplyLoading(true); setApplyMsg(null);
+        try {
+            const fd = new FormData();
+            Object.entries(applyForm).forEach(([k, v]) => fd.append(k, v));
+            const res = await apiFetch('/api/v1/apply_loan.php', { method: 'POST', body: fd });
+            setApplyMsg({ type: 'success', text: res.message || 'Application submitted!' });
+            setTimeout(() => window.location.reload(), 1800);
+        } catch (err: any) {
+            setApplyMsg({ type: 'error', text: err.message || 'Failed to apply.' });
+        } finally { setApplyLoading(false); }
+    };
+
+    const handleRepay = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setRepayLoading(true); setRepayMsg(null);
+        try {
+            const fd = new FormData();
+            fd.append('action', 'repay_wallet');
+            fd.append('amount', repayAmount);
+            const res = await apiFetch('/api/v1/member_loans.php', { method: 'POST', body: fd });
+            setRepayMsg({ type: 'success', text: res.message || 'Repayment successful!' });
+            setTimeout(() => window.location.reload(), 1800);
+        } catch (err: any) {
+            setRepayMsg({ type: 'error', text: err.message || 'Repayment failed.' });
+        } finally { setRepayLoading(false); }
+    };
+
+    if (loading) {
+        return (
+            <div className="loans-page">
+                <div className="loans-loading">
+                    <div className="loans-spinner"></div>
+                    <p>Loading loan portfolio...</p>
+                </div>
+            </div>
+        );
     }
-    setLoading(false);
-  }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetchApi('apply_loan', 'POST', formData);
-    if (res.status === 'success') {
-      alert(res.message);
-      setShowApplyModal(false);
-      loadData();
-    } else {
-      alert(res.message);
+    if (error) {
+        return (
+            <div className="loans-page">
+                <div className="loans-error-banner">
+                    <i className="bi bi-exclamation-triangle-fill"></i> {error}
+                </div>
+            </div>
+        );
     }
-  };
 
-  if (loading && !data) return (
-    <div className="flex flex-col items-center justify-center h-[60vh]">
-       <div className="w-12 h-12 border-4 border-[#0b2419] border-t-[#D0F35D] rounded-full animate-spin mb-4" />
-       <p className="text-[#0b2419]/40 text-[11px] font-black uppercase tracking-[2px]">Calculating Eligibility...</p>
-    </div>
-  );
+    const { balances, active_loan, pending_loan, history, available_guarantors } = data || {};
+    const { total_savings = 0, wallet_balance = 0, max_loan_limit = 0, is_eligible = false } = balances || {};
+    const hasActiveLoan = !!active_loan;
+    const hasPendingLoan = !!pending_loan;
+    const estimatedInterest = parseFloat(applyForm.amount || '0') * 0.12;
+    const estimatedTotal = parseFloat(applyForm.amount || '0') + estimatedInterest;
 
-  const activeLoan = data?.active_loan;
-  const pendingLoan = data?.pending_loan;
-  const limitPercent = Math.min(100, (Number(formData.amount) / data?.balances?.max_loan_limit) * 100) || 0;
+    const STATUS_COLORS: Record<string, string> = {
+        completed: 'status-completed',
+        disbursed: 'status-disbursed',
+        active: 'status-active',
+        pending: 'status-pending',
+        approved: 'status-approved',
+        rejected: 'status-rejected',
+        settled: 'status-completed',
+    };
 
-  return (
-    <div className="space-y-10">
-      
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <div className="flex items-center gap-3 mb-2 leading-none">
-              <span className="text-[11px] font-black text-[#0b2419]/40 uppercase tracking-[2px]">Loan Portfolio & Repayments</span>
-              <div className="h-px w-8 bg-emerald-900/10" />
-           </div>
-           <h2 className="text-3xl font-black text-[#0b2419] tracking-tight">Financial <span className="text-emerald-600">Freedom</span></h2>
-           <p className="text-sm font-medium text-slate-500 mt-2">Manage your credit facilities and track repayment progress.</p>
-        </div>
-        <div className="flex items-center gap-3">
-           {activeLoan || pendingLoan ? (
-             <button className="h-12 px-6 bg-slate-100 border border-emerald-900/10 rounded-2xl text-[11px] font-black uppercase tracking-widest text-[#0b2419]/30 cursor-not-allowed flex items-center gap-2">
-                Limit Reached
-             </button>
-           ) : (
-             <button 
-               onClick={() => setShowApplyModal(true)}
-               className="h-12 px-8 bg-[#D0F35D] text-[#0b2419] rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#0b2419] hover:text-white transition-all flex items-center gap-3 shadow-xl shadow-[#D0F35D]/20"
-             >
-                <PlusCircle size={18} /> Apply for Loan
-             </button>
-           )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left: Active Loan or Eligibility */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          <AnimatePresence>
-            {pendingLoan && (
-              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-amber-50 border border-amber-200 rounded-3xl flex items-center gap-5">
-                 <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                    <Hourglass size={24} />
-                 </div>
-                 <div>
-                    <h4 className="text-sm font-black text-amber-900 uppercase">Application In Review</h4>
-                    <p className="text-xs font-bold text-amber-900/60 mt-1">
-                      Your request for <strong>KES {Number(pendingLoan.amount).toLocaleString()}</strong> is status: <span className="underline">{pendingLoan.status}</span>.
-                    </p>
-                 </div>
-              </motion.div>
-            )}
-
-            {activeLoan && activeLoan.is_overdue && (
-              <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-red-50 border border-red-200 rounded-3xl flex items-center gap-5">
-                 <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center">
-                    <AlertTriangle size={24} />
-                 </div>
-                 <div>
-                    <h4 className="text-sm font-black text-red-900 uppercase">Overdue Repayment Detected</h4>
-                    <p className="text-xs font-bold text-red-900/60 mt-1">
-                      Loan repayment was due on <strong>{new Date(activeLoan.next_repayment_date).toLocaleDateString()}</strong>. Fines may apply.
-                    </p>
-                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {activeLoan ? (
-            /* The Forest Card */
-            <div className="relative bg-[#0b2419] rounded-[40px] overflow-hidden p-10 md:p-12 text-white shadow-[0_30px_70px_rgba(11,36,25,0.4)]">
-               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-600/10 rounded-full blur-[100px] -mr-48 -mt-48" />
-               
-               <div className="relative z-10">
-                  <div className="flex justify-between items-start mb-10">
-                     <div>
-                        <span className="inline-flex px-4 py-2 bg-white/10 border border-white/10 rounded-full text-[10px] font-black tracking-widest uppercase mb-4">
-                           Active Loan #{activeLoan.loan_id}
-                        </span>
-                        <h2 className="text-5xl md:text-6xl font-black tracking-tighter mt-2">
-                           <span className="text-[20px] font-bold opacity-30 mr-2">KES</span>
-                           {Number(activeLoan.outstanding_balance).toLocaleString()}
-                        </h2>
-                        <span className="text-white/30 text-[10px] font-black uppercase tracking-widest mt-2 block">Outstanding Balance</span>
-                     </div>
-                     <div className="hidden md:flex flex-col text-right gap-4">
-                        <div>
-                           <p className="text-white/30 text-[9px] font-black uppercase tracking-widest mb-1">Duration / Rate</p>
-                           <p className="text-sm font-black">{activeLoan.duration_months} MOS · {activeLoan.interest_rate}% p.a</p>
-                        </div>
-                        {activeLoan.total_fines > 0 && (
-                          <div>
-                             <p className="text-red-400 text-[9px] font-black uppercase tracking-widest mb-1">Late Fines</p>
-                             <p className="text-sm font-black text-red-400">+ KES {Number(activeLoan.total_fines).toLocaleString()}</p>
-                          </div>
-                        )}
-                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-end">
-                     <div>
-                        <div className="flex justify-between items-end mb-3">
-                           <span className="text-xs font-black uppercase tracking-widest opacity-60">Repayment Progress</span>
-                           <span className="text-2xl font-black text-[#D0F35D] tracking-tight">{activeLoan.progress_percent.toFixed(0)}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                           <motion.div initial={{ width: 0 }} animate={{ width: `${activeLoan.progress_percent}%` }} className="h-full bg-[#D0F35D] rounded-full" />
-                        </div>
-                        <p className="text-[10px] font-bold opacity-30 mt-4 uppercase tracking-[1px] leading-tight max-w-sm">
-                          Guarantors: {activeLoan.guarantors.join(', ') || 'None'}
-                        </p>
-                     </div>
-                     <div className="flex gap-4">
-                        <Link href="/member/mpesa" className="flex-1 h-12 bg-[#D0F35D] text-[#0b2419] rounded-2xl flex items-center justify-center text-[10px] font-black uppercase tracking-widest shadow-xl shadow-[#D0F35D]/10">
-                           <CheckCircle size={16} className="mr-2" /> M-Pesa Repay
+    return (
+        <div className="loans-page">
+            {/* PAGE HEADER */}
+            <div className="loans-header">
+                <div>
+                    <h2 className="loans-h2">Loan Portfolio</h2>
+                    <p className="loans-sub">Manage your finances and track repayment progress.</p>
+                </div>
+                <div className="loans-hdr-btns">
+                    {wallet_balance > 0 && (
+                        <Link href="/member/withdraw?type=loans" className="btn-ghost-loans">
+                            <i className="bi bi-wallet2"></i> Withdraw Funds
                         </Link>
-                        <button className="flex-1 h-12 bg-white/10 border border-white/10 text-white rounded-2xl flex items-center justify-center text-[10px] font-black uppercase tracking-widest">
-                           <Wallet size={16} className="mr-2" /> Wallet
+                    )}
+                    {(hasActiveLoan || hasPendingLoan) ? (
+                        <button className="btn-disabled-loans" disabled>
+                            <i className="bi bi-lock-fill"></i> Limit Reached
                         </button>
-                     </div>
-                  </div>
-               </div>
+                    ) : (
+                        <button
+                            className="btn-lime-loans"
+                            onClick={() => (document.getElementById('applyModal') as HTMLDialogElement)?.showModal()}
+                        >
+                            <i className="bi bi-plus-lg"></i> Apply for Loan
+                        </button>
+                    )}
+                </div>
             </div>
-          ) : !pendingLoan ? (
-            /* Eligibility State */
-            <div className="bg-white border-2 border-dashed border-emerald-900/10 rounded-[40px] p-12 text-center flex flex-col items-center">
-               <div className={cn("w-20 h-20 rounded-full flex items-center justify-center mb-6", data?.balances?.is_eligible ? "bg-[#D0F35D]/20 text-[#0b2419]" : "bg-slate-50 text-slate-300")}>
-                  {data?.balances?.is_eligible ? <ShieldCheck size={40} /> : <Hourglass size={40} />}
-               </div>
-               <h3 className="text-2xl font-black text-[#0b2419] mb-3">
-                 {data?.balances?.is_eligible ? "You are Eligible!" : "Build Your Savings"}
-               </h3>
-               <p className="text-slate-400 text-sm font-medium max-w-md mb-8">
-                 {data?.balances?.is_eligible 
-                   ? `You currently have no active debts. Based on your savings, you qualify for an instant loan up to the limit below.`
-                   : `To qualify for a loan, you need to have active savings. Start saving today to unlock borrowing power up to 3x your balance.`}
-               </p>
-               {data?.balances?.is_eligible ? (
-                 <div className="space-y-2">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Borrowing Power</span>
-                    <h4 className="text-4xl font-black text-emerald-600 tracking-tighter">KES {Number(data?.balances?.max_loan_limit).toLocaleString()}</h4>
-                 </div>
-               ) : (
-                 <Link href="/member/mpesa" className="h-12 px-10 bg-[#0b2419] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2">
-                    Start Saving Now <ArrowRight size={16} />
-                 </Link>
-               )}
+
+            {/* MAIN GRID */}
+            <div className="loans-grid">
+                {/* LEFT: Active Loan + History */}
+                <div className="loans-main">
+                    {/* Pending Alert */}
+                    {hasPendingLoan && (
+                        <div className="loans-alert loans-alert-warn">
+                            <div className="la-ico warn"><i className="bi bi-hourglass-split"></i></div>
+                            <div>
+                                <div className="la-title">Application In Review</div>
+                                <div className="la-sub">Your request for <strong>{kf(pending_loan.amount)}</strong> is currently: <strong style={{ textTransform: 'capitalize' }}>{pending_loan.status}</strong>.</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Overdue Alert */}
+                    {hasActiveLoan && active_loan.is_overdue && (
+                        <div className="loans-alert loans-alert-danger">
+                            <div className="la-ico danger"><i className="bi bi-exclamation-triangle-fill"></i></div>
+                            <div>
+                                <div className="la-title" style={{ color: '#dc2626' }}>Overdue Repayment Detected</div>
+                                <div className="la-sub">Your repayment was due on <strong>{new Date(active_loan.next_repayment_date).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>. Please repay to avoid daily fines.</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Active Loan Card */}
+                    {hasActiveLoan ? (
+                        <div className="active-loan-card">
+                            <div className="alc-top">
+                                <div>
+                                    <div className="alc-badge">Active Loan #{active_loan.loan_id}</div>
+                                    <div className="alc-balance">{kf(active_loan.outstanding_balance ?? active_loan.current_balance)}</div>
+                                    <div className="alc-label">Outstanding Balance</div>
+                                </div>
+                                <div className="alc-meta">
+                                    <div>
+                                        <div className="alc-meta-label">Installment / Mo</div>
+                                        <div className="alc-meta-val">{kf((active_loan.total_payable || active_loan.amount) / (active_loan.duration_months || 12))}</div>
+                                    </div>
+                                    {(active_loan.total_fines ?? 0) > 0 && (
+                                        <div>
+                                            <div className="alc-meta-label" style={{ color: '#fbbf24' }}>Late Fines</div>
+                                            <div className="alc-meta-val" style={{ color: '#fbbf24' }}>+{kf(active_loan.total_fines)}</div>
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="alc-meta-label">Interest Rate</div>
+                                        <div className="alc-meta-val">{active_loan.interest_rate}% p.a</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="alc-progress-section">
+                                <div className="alc-progress-header">
+                                    <span>Repayment Progress</span>
+                                    <span>{(active_loan.progress_percent ?? 0).toFixed(0)}%</span>
+                                </div>
+                                <div className="alc-progress-track">
+                                    <div className="alc-progress-fill" style={{ width: `${active_loan.progress_percent ?? 0}%` }}></div>
+                                </div>
+                                {active_loan.guarantors?.length > 0 && (
+                                    <div className="alc-guarantors">Guarantors: {active_loan.guarantors.join(', ')}</div>
+                                )}
+                                <div className="alc-paid-info">
+                                    Paid: {kf(active_loan.repaid_amount ?? 0)} of {kf(active_loan.total_payable ?? active_loan.amount)}
+                                </div>
+                            </div>
+                            <div className="alc-actions">
+                                <Link href={`/member/mpesa?type=loan_repayment&loan_id=${active_loan.loan_id}`} className="btn-lime-loans w-full">
+                                    <i className="bi bi-phone"></i> M-Pesa
+                                </Link>
+                                <button
+                                    className="btn-outline-loans w-full"
+                                    onClick={() => (document.getElementById('walletRepayModal') as HTMLDialogElement)?.showModal()}
+                                >
+                                    <i className="bi bi-wallet2"></i> Wallet ({kf(wallet_balance)})
+                                </button>
+                            </div>
+                        </div>
+                    ) : !hasPendingLoan ? (
+                        <div className="eligibility-card">
+                            {is_eligible ? (
+                                <>
+                                    <div className="ec-ico lime"><i className="bi bi-shield-check"></i></div>
+                                    <h3 className="ec-title">You are Eligible!</h3>
+                                    <p className="ec-sub">No active debts. Based on your savings, you qualify for a loan up to:</p>
+                                    <div className="ec-limit">{kf(max_loan_limit)}</div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="ec-ico"><i className="bi bi-clock-history"></i></div>
+                                    <h3 className="ec-title">Build Your Savings</h3>
+                                    <p className="ec-sub">To qualify for a loan, you need active savings. Start saving to unlock up to 3× borrowing power.</p>
+                                    <Link href="/member/mpesa?type=savings" className="btn-lime-loans">Start Saving Now</Link>
+                                </>
+                            )}
+                        </div>
+                    ) : null}
+
+                    {/* Loan History Table */}
+                    <div className="loans-history-card">
+                        <div className="lh-header">
+                            <h6 className="lh-title">Loan History</h6>
+                        </div>
+                        <div className="lh-table-wrap">
+                            <table className="lh-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(!history || history.length === 0) ? (
+                                        <tr><td colSpan={5} className="lh-empty">No loan history found.</td></tr>
+                                    ) : history.map((h: any, i: number) => (
+                                        <tr key={i}>
+                                            <td className="lh-date">{new Date(h.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                            <td className="lh-type">{h.loan_type?.replace(/_/g, ' ')}</td>
+                                            <td className="lh-amount">{kf(h.amount)}</td>
+                                            <td><span className={`lh-badge ${STATUS_COLORS[h.status] ?? 'status-pending'}`}>{h.status}</span></td>
+                                            <td className="lh-balance">{kf(h.current_balance)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT SIDEBAR */}
+                <div className="loans-sidebar">
+                    {/* Wallet Card */}
+                    <div className="loans-side-card loans-side-card-lime">
+                        <div className="lsc-ico lime"><i className="bi bi-wallet2"></i></div>
+                        <div>
+                            <div className="lsc-label">Loan Wallet (Disbursed)</div>
+                            <div className="lsc-val">{kf(wallet_balance)}</div>
+                        </div>
+                        <Link href="/member/withdraw?type=loans&source=loans" className="btn-lime-loans w-full mt-3">
+                            <i className="bi bi-cash-coin"></i> Withdraw to M-Pesa
+                        </Link>
+                    </div>
+
+                    {/* Savings / Limit */}
+                    <div className="loans-side-card">
+                        <div className="lsc-row">
+                            <div className="lsc-ico"><i className="bi bi-safe"></i></div>
+                            <div>
+                                <div className="lsc-label">Total Savings</div>
+                                <div className="lsc-val">{kf(total_savings)}</div>
+                            </div>
+                        </div>
+                        <hr className="lsc-hr" />
+                        <div className="lsc-row">
+                            <div className="lsc-ico lime"><i className="bi bi-graph-up-arrow"></i></div>
+                            <div>
+                                <div className="lsc-label">Max Loan Limit (3×)</div>
+                                <div className="lsc-val lsc-green">{kf(max_loan_limit)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Terms */}
+                    <div className="loans-side-card loans-side-card-dark">
+                        <h5 className="lsc-dark-title"><i className="bi bi-info-circle"></i> Quick Terms</h5>
+                        <ul className="lsc-terms">
+                            <li><i className="bi bi-check-circle-fill"></i> Interest rate 12% p.a. on reducing balance.</li>
+                            <li><i className="bi bi-check-circle-fill"></i> Loans require 2 active guarantors.</li>
+                            <li><i className="bi bi-check-circle-fill"></i> Processing takes 24-48 hours.</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-          ) : null}
 
-          {/* History */}
-          <div className="bg-white border border-emerald-900/5 rounded-[32px] overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
-             <div className="px-8 py-5 border-b border-emerald-900/5 flex items-center justify-between">
-                <span className="text-[11px] font-black text-[#0b2419] uppercase tracking-widest">Recent Activity</span>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{data?.history?.length || 0} Records</span>
-             </div>
-             <div className="overflow-x-auto">
-               <table className="w-full">
-                  <thead>
-                     <tr className="bg-slate-50/50">
-                        <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                        <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                        <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Principal</th>
-                        <th className="px-8 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                        <th className="px-8 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Ref</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-emerald-900/5">
-                     {data?.history?.map((loan: any) => (
-                       <tr key={loan.loan_id} className="hover:bg-slate-50/50 transition-all group">
-                          <td className="px-8 py-5">
-                             <p className="text-sm font-black text-[#0b2419] mb-1">{new Date(loan.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</p>
-                             <p className="text-[9px] font-bold text-slate-300 uppercase">{new Date(loan.created_at).getFullYear()}</p>
-                          </td>
-                          <td className="px-8 py-5">
-                             <p className="text-[10px] font-black text-[#0b2419] uppercase tracking-widest">{loan.loan_type}</p>
-                          </td>
-                          <td className="px-8 py-5">
-                             <p className="text-sm font-black text-[#0b2419]">KES {Number(loan.amount).toLocaleString()}</p>
-                          </td>
-                          <td className="px-8 py-5">
-                             <span className={cn(
-                               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest uppercase",
-                               loan.status === 'completed' ? "bg-emerald-50 text-emerald-600" : 
-                               loan.status === 'pending' ? "bg-amber-50 text-amber-600" : 
-                               loan.status === 'rejected' ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
-                             )}>
-                                <div className={cn("w-1 h-1 rounded-full", loan.status === 'completed' ? "bg-emerald-600" : loan.status === 'pending' ? "bg-amber-600" : "bg-blue-600")} />
-                                {loan.status}
-                             </span>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 float-right opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ChevronRight size={14} />
-                             </div>
-                          </td>
-                       </tr>
-                     ))}
-                  </tbody>
-               </table>
-             </div>
-          </div>
+            {/* APPLY LOAN MODAL */}
+            <dialog id="applyModal" className="loans-modal">
+                <div className="lm-inner">
+                    <div className="lm-header">
+                        <div>
+                            <div className="lm-title">New Loan Application</div>
+                            <div className="lm-sub">Customize your loan details</div>
+                        </div>
+                        <button className="lm-close" onClick={() => (document.getElementById('applyModal') as HTMLDialogElement)?.close()}>
+                            <i className="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    {applyMsg && (
+                        <div className={`lm-msg ${applyMsg.type === 'success' ? 'lm-msg-ok' : 'lm-msg-err'}`}>
+                            <i className={`bi ${applyMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
+                            {applyMsg.text}
+                        </div>
+                    )}
+                    <form onSubmit={handleApply} className="lm-body">
+                        <div className="lm-section">
+                            <div className="lm-step-label"><span className="lm-step-no">1</span> Loan Details</div>
+
+                            <div className="lm-limit-bar-wrap">
+                                <div className="lm-limit-row">
+                                    <span className="lm-limit-label">Limit Usage</span>
+                                    <span className="lm-limit-pct">
+                                        {max_loan_limit > 0 ? ((parseFloat(applyForm.amount || '0') / max_loan_limit) * 100).toFixed(0) : 0}%
+                                    </span>
+                                </div>
+                                <div className="lm-limit-track">
+                                    <div className="lm-limit-fill" style={{ width: `${Math.min(100, (parseFloat(applyForm.amount || '0') / (max_loan_limit || 1)) * 100)}%` }}></div>
+                                </div>
+                                <div className="lm-limit-max">Max: {kf(max_loan_limit)}</div>
+                            </div>
+
+                            <div className="lm-field">
+                                <label className="lm-label">Loan Category</label>
+                                <select className="lm-select" value={applyForm.loan_type} onChange={e => setApplyForm(p => ({ ...p, loan_type: e.target.value }))}>
+                                    <option value="emergency">Emergency Loan</option>
+                                    <option value="development">Development Loan</option>
+                                    <option value="business">Business Expansion</option>
+                                    <option value="education">Education / School Fees</option>
+                                </select>
+                            </div>
+                            <div className="lm-row2">
+                                <div className="lm-field">
+                                    <label className="lm-label">Amount (KES)</label>
+                                    <input
+                                        type="number" className="lm-input" placeholder="0" required
+                                        value={applyForm.amount}
+                                        onChange={e => setApplyForm(p => ({ ...p, amount: e.target.value }))}
+                                    />
+                                </div>
+                                <div className="lm-field">
+                                    <label className="lm-label">Duration</label>
+                                    <select className="lm-select" value={applyForm.duration_months} onChange={e => setApplyForm(p => ({ ...p, duration_months: e.target.value }))}>
+                                        <option value="3">3 Months</option>
+                                        <option value="6">6 Months</option>
+                                        <option value="12">12 Months</option>
+                                        <option value="18">18 Months</option>
+                                        <option value="24">24 Months</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="lm-section">
+                            <div className="lm-step-label"><span className="lm-step-no">2</span> Guarantors</div>
+                            <div className="lm-field">
+                                <label className="lm-label">First Guarantor</label>
+                                <select className="lm-select" required value={applyForm.guarantor_1} onChange={e => setApplyForm(p => ({ ...p, guarantor_1: e.target.value }))}>
+                                    <option value="">Select a member...</option>
+                                    {available_guarantors?.map((m: any) => (
+                                        <option key={m.member_id} value={m.member_id}>{m.full_name} ({m.national_id})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="lm-field">
+                                <label className="lm-label">Second Guarantor</label>
+                                <select className="lm-select" required value={applyForm.guarantor_2} onChange={e => setApplyForm(p => ({ ...p, guarantor_2: e.target.value }))}>
+                                    <option value="">Select a member...</option>
+                                    {available_guarantors?.filter((m: any) => String(m.member_id) !== applyForm.guarantor_1).map((m: any) => (
+                                        <option key={m.member_id} value={m.member_id}>{m.full_name} ({m.national_id})</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="lm-section">
+                            <div className="lm-step-label"><span className="lm-step-no">3</span> Purpose</div>
+                            <textarea className="lm-textarea" rows={2} placeholder="Briefly describe why you need this loan..." required
+                                value={applyForm.notes} onChange={e => setApplyForm(p => ({ ...p, notes: e.target.value }))}></textarea>
+                        </div>
+
+                        <div className="lm-summary">
+                            <div className="lm-sum-row"><span>Estimated Interest (12%)</span><span className="lm-sum-val">KES {estimatedInterest.toLocaleString()}</span></div>
+                            <hr className="lm-sum-hr" />
+                            <div className="lm-sum-row"><span className="lm-sum-main">Est. Total Payable</span><span className="lm-sum-big">KES {estimatedTotal.toLocaleString()}</span></div>
+                        </div>
+
+                        <button type="submit" className="btn-lime-loans w-full" disabled={applyLoading}>
+                            {applyLoading ? <><i className="bi bi-arrow-repeat"></i> Processing...</> : <>Confirm &amp; Apply <i className="bi bi-send-fill"></i></>}
+                        </button>
+                    </form>
+                </div>
+            </dialog>
+
+            {/* WALLET REPAY MODAL */}
+            {hasActiveLoan && (
+                <dialog id="walletRepayModal" className="loans-modal">
+                    <div className="lm-inner">
+                        <div className="lm-header">
+                            <div>
+                                <div className="lm-title">Repay via Wallet</div>
+                                <div className="lm-sub">Available: {kf(wallet_balance)}</div>
+                            </div>
+                            <button className="lm-close" onClick={() => (document.getElementById('walletRepayModal') as HTMLDialogElement)?.close()}>
+                                <i className="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                        {repayMsg && (
+                            <div className={`lm-msg ${repayMsg.type === 'success' ? 'lm-msg-ok' : 'lm-msg-err'}`}>
+                                <i className={`bi ${repayMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
+                                {repayMsg.text}
+                            </div>
+                        )}
+                        <form onSubmit={handleRepay} className="lm-body">
+                            <div className="lm-field">
+                                <label className="lm-label">Amount to Repay (KES)</label>
+                                <input
+                                    type="number" className="lm-input" placeholder="0" required
+                                    min={1} max={Math.min(wallet_balance, active_loan?.current_balance || 0)}
+                                    value={repayAmount}
+                                    onChange={e => setRepayAmount(e.target.value)}
+                                />
+                                <div className="lm-hint">Outstanding: {kf(active_loan?.outstanding_balance ?? 0)}</div>
+                            </div>
+                            <button type="submit" className="btn-lime-loans w-full" disabled={repayLoading}>
+                                {repayLoading ? 'Processing...' : 'Confirm Repayment'}
+                            </button>
+                        </form>
+                    </div>
+                </dialog>
+            )}
         </div>
-
-        {/* Right Sidebar Stats */}
-        <div className="space-y-6">
-           <div className="bg-white border-2 border-[#D0F35D] p-8 rounded-[32px] shadow-sm">
-              <div className="flex items-center gap-4 mb-6">
-                 <div className="w-12 h-12 rounded-2xl bg-[#D0F35D]/20 text-[#0b2419] flex items-center justify-center">
-                    <Wallet size={24} />
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Loan Wallet</p>
-                    <h5 className="text-2xl font-black text-[#0b2419]">KES {Number(data?.balances?.wallet_balance).toLocaleString()}</h5>
-                 </div>
-              </div>
-              <Link href="/member/withdraw" className="h-12 w-full bg-[#D0F35D] text-[#0b2419] rounded-2xl flex items-center justify-center text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
-                 <ArrowUpRight size={16} className="mr-2" /> Withdraw to M-Pesa
-              </Link>
-           </div>
-
-           <div className="bg-white border border-emerald-900/5 p-8 rounded-[32px] shadow-sm">
-              <div className="space-y-8">
-                 <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-slate-50 text-emerald-900/20 flex items-center justify-center">
-                       <ShieldCheck size={20} />
-                    </div>
-                    <div>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Savings</p>
-                       <h5 className="text-xl font-black text-[#0b2419]">KES {Number(data?.balances?.total_savings).toLocaleString()}</h5>
-                    </div>
-                 </div>
-                 <div className="pt-8 border-t border-slate-50">
-                    <div className="flex items-center gap-4">
-                       <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                          <TrendingUp size={20} />
-                       </div>
-                       <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Max Borrowing Limit</p>
-                          <h5 className="text-xl font-black text-emerald-600">KES {Number(data?.balances?.max_loan_limit).toLocaleString()}</h5>
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-
-           <div className="bg-[#0b2419] p-8 rounded-[32px] text-white overflow-hidden relative">
-              <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/5 rounded-full blur-2xl" />
-              <h5 className="text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2">
-                 <Info size={16} className="text-[#D0F35D]" /> Quick Terms
-              </h5>
-              <ul className="space-y-5">
-                 {[
-                   "Interest rate fixed at 12% p.a.",
-                   "Loans require active guarantors.",
-                   "Processing takes 24-48 hours.",
-                   "Maximum limit is 3x Savings."
-                 ].map((term, i) => (
-                   <li key={i} className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#D0F35D] mt-1.5" />
-                      <p className="text-[11px] font-bold text-white/50 leading-relaxed">{term}</p>
-                   </li>
-                 ))}
-              </ul>
-           </div>
-        </div>
-
-      </div>
-
-      {/* Apply Loan Modal */}
-      <AnimatePresence>
-        {showApplyModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowApplyModal(false)} className="absolute inset-0 bg-[#0b2419]/80 backdrop-blur-sm" />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
-              animate={{ scale: 1, opacity: 1, y: 0 }} 
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-white w-full max-w-xl rounded-[40px] overflow-hidden relative shadow-2xl"
-            >
-               <div className="p-8 md:p-10">
-                  <div className="flex justify-between items-start mb-8">
-                     <div>
-                        <h3 className="text-2xl font-black text-[#0b2419] tracking-tight">Loan Request</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Submit your credit application</p>
-                     </div>
-                     <button onClick={() => setShowApplyModal(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors">
-                        <XSquare size={20} className="text-slate-400" />
-                     </button>
-                  </div>
-
-                  <form onSubmit={handleApply} className="space-y-8">
-                     
-                     <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                           <div className="w-6 h-6 rounded-full bg-[#0b2419] text-[#D0F35D] flex items-center justify-center text-[10px] font-black">1</div>
-                           <span className="text-[11px] font-black uppercase tracking-[2px] text-slate-400">Application Details</span>
-                        </div>
-                        
-                        <div className="space-y-3">
-                           <div className="flex justify-between items-end mb-1">
-                              <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Limit Usage</span>
-                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">{limitPercent.toFixed(0)}%</span>
-                           </div>
-                           <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden">
-                              <div className={cn("h-full rounded-full transition-all duration-500", limitPercent > 90 ? "bg-red-500" : "bg-emerald-500")} style={{ width: `${limitPercent}%` }} />
-                           </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Loan Category</label>
-                              <select 
-                                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 text-sm font-black focus:ring-2 focus:ring-emerald-500/20"
-                                value={formData.loan_type}
-                                onChange={e => setFormData({...formData, loan_type: e.target.value})}
-                              >
-                                 <option value="emergency">Emergency Loan</option>
-                                 <option value="development">Development Loan</option>
-                                 <option value="business">Business Expansion</option>
-                                 <option value="education">Education</option>
-                              </select>
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Duration</label>
-                              <select 
-                                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 text-sm font-black focus:ring-2 focus:ring-emerald-500/20"
-                                value={formData.duration_months}
-                                onChange={e => setFormData({...formData, duration_months: e.target.value})}
-                              >
-                                 <option value="3">3 Months</option>
-                                 <option value="6">6 Months</option>
-                                 <option value="12">12 Months</option>
-                                 <option value="24">24 Months</option>
-                              </select>
-                           </div>
-                        </div>
-
-                        <div className="space-y-2">
-                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Requested Amount (KES)</label>
-                           <input 
-                             type="number" 
-                             className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 text-sm font-black focus:ring-2 focus:ring-emerald-500/20"
-                             placeholder="Enter amount..."
-                             value={formData.amount}
-                             onChange={e => setFormData({...formData, amount: e.target.value})}
-                             required
-                           />
-                        </div>
-                     </div>
-
-                     <div className="space-y-6 pt-6 border-t border-slate-50">
-                        <div className="flex items-center gap-3">
-                           <div className="w-6 h-6 rounded-full bg-[#0b2419] text-[#D0F35D] flex items-center justify-center text-[10px] font-black">2</div>
-                           <span className="text-[11px] font-black uppercase tracking-[2px] text-slate-400">Guarantors Info</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">First Guarantor</label>
-                              <select 
-                                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 text-sm font-black focus:ring-2 focus:ring-emerald-500/20"
-                                value={formData.guarantor_1}
-                                onChange={e => setFormData({...formData, guarantor_1: e.target.value})}
-                                required
-                              >
-                                 <option value="">Select guarantor...</option>
-                                 {data?.available_guarantors?.map((m: any) => (
-                                   <option key={m.member_id} value={m.member_id}>{m.full_name}</option>
-                                 ))}
-                              </select>
-                           </div>
-                           <div className="space-y-2">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Second Guarantor</label>
-                              <select 
-                                className="w-full h-14 bg-slate-50 border-none rounded-2xl px-6 text-sm font-black focus:ring-2 focus:ring-emerald-500/20"
-                                value={formData.guarantor_2}
-                                onChange={e => setFormData({...formData, guarantor_2: e.target.value})}
-                                required
-                              >
-                                 <option value="">Select guarantor...</option>
-                                 {data?.available_guarantors?.map((m: any) => (
-                                   <option key={m.member_id} value={m.member_id}>{m.full_name}</option>
-                                 ))}
-                              </select>
-                           </div>
-                        </div>
-                     </div>
-
-                     <div className="space-y-6 pt-6 border-t border-slate-50">
-                        <div className="flex items-center gap-3">
-                           <div className="w-6 h-6 rounded-full bg-[#0b2419] text-[#D0F35D] flex items-center justify-center text-[10px] font-black">3</div>
-                           <span className="text-[11px] font-black uppercase tracking-[2px] text-slate-400">Purpose</span>
-                        </div>
-                        <textarea 
-                          className="w-full bg-slate-50 border-none rounded-3xl p-6 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20"
-                          rows={3}
-                          placeholder="Briefly describe why you need this loan..."
-                          value={formData.notes}
-                          onChange={e => setFormData({...formData, notes: e.target.value})}
-                          required
-                        />
-                     </div>
-
-                     <div className="bg-slate-50 p-6 rounded-3xl space-y-2">
-                        <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                           <span>Estimated Interest</span>
-                           <span className="text-[#0b2419]">KES {Number(Number(formData.amount) * 0.12).toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-2">
-                           <span className="text-xs font-black text-[#0b2419] uppercase tracking-widest">Est. Total Payable</span>
-                           <span className="text-xl font-black text-emerald-600 tracking-tight">KES {Number(Number(formData.amount) * 1.12).toLocaleString()}</span>
-                        </div>
-                     </div>
-
-                     <button 
-                       type="submit"
-                       className="w-full h-14 bg-[#D0F35D] text-[#0b2419] rounded-[20px] text-[11px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                     >
-                        Confirm & Apply <Send size={16} />
-                     </button>
-                  </form>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-    </div>
-  );
+    );
 }

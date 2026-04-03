@@ -209,8 +209,8 @@ export default function MemberDashboard() {
         <div className="dash relative z-10 w-full mb-10 overflow-visible mt-[-40px]">
             {/* HERO */}
             <div className="hero">
-                <div className="hero-mesh"></div><div class="hero-dots"></div>
-                <div className="hero-ring r1"></div><div class="hero-ring r2"></div>
+                <div className="hero-mesh"></div><div className="hero-dots"></div>
+                <div className="hero-ring r1"></div><div className="hero-ring r2"></div>
                 <div className="hero-inner">
                     <div className="flex flex-wrap items-end gap-6 justify-between">
                         <div className="w-full lg:w-2/3">
