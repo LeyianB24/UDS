@@ -16,38 +16,10 @@ declare(strict_types=1);
  */
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
-if (session_status() === PHP_SESSION_NONE) session_start();
-
+require_once __DIR__ . '/api_init.php';
 require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../inc/Auth.php';
 
-// ── CORS / JSON Headers ───────────────────────────────────────────────────────
-header('Access-Control-Allow-Origin: *'); 
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
-header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
-
-// ── Standard Response Helpers ─────────────────────────────────────────────────
-function api_success(mixed $data = null, string $message = 'OK', int $code = 200): never
-{
-    http_response_code($code);
-    echo json_encode(['status' => 'success', 'message' => $message, 'data' => $data], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-function api_error(string $message, int $code = 400, mixed $data = null): never
-{
-    http_response_code($code);
-    echo json_encode(['status' => 'error', 'message' => $message, 'data' => $data], JSON_UNESCAPED_UNICODE);
-    exit;
-}
 
 // ── Route Registry ────────────────────────────────────────────────────────────
 // Format: 'METHOD:endpoint' => ['file' => 'path/to/handler.php', 'auth' => 'admin'|'member'|'none']
