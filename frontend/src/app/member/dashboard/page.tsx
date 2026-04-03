@@ -60,7 +60,7 @@ export default function MemberDashboard() {
             cornerRadius: 10,
             borderColor: 'rgba(163,230,53,.2)',
             borderWidth: 1,
-            titleFont: { family: "'Plus Jakarta Sans',sans-serif", weight: '800' as const, size: 12 },
+            titleFont: { family: "'Plus Jakarta Sans',sans-serif", weight: 'bold' as const, size: 12 },
             bodyFont: { family: "'Plus Jakarta Sans',sans-serif", size: 11 }
         };
         const XS = { grid: { display: false }, ticks: { color: TICK, font: { family: "'Plus Jakarta Sans',sans-serif", size: 10 } } };
@@ -81,7 +81,7 @@ export default function MemberDashboard() {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { ...TT, callbacks: { label: (c) => ' ' + c.dataset.label + ': KES ' + c.parsed.y.toLocaleString() } }
+                    tooltip: { ...TT, callbacks: { label: (c) => ' ' + c.dataset.label + ': KES ' + (c.parsed.y ?? 0).toLocaleString() } }
                 },
                 scales: { x: { ...XS, stacked: true }, y: { ...YS, stacked: true } }
             }
@@ -101,7 +101,7 @@ export default function MemberDashboard() {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
-                    tooltip: { ...TT, callbacks: { label: (c) => ' ' + c.dataset.label + ': KES ' + c.parsed.y.toLocaleString() } }
+                    tooltip: { ...TT, callbacks: { label: (c) => ' ' + c.dataset.label + ': KES ' + (c.parsed.y ?? 0).toLocaleString() } }
                 },
                 scales: { x: XS, y: YS }
             }
@@ -174,7 +174,7 @@ export default function MemberDashboard() {
                 scales: {
                     r: {
                         grid: { color: GRID }, ticks: { display: false }, min: 0, max: 100,
-                        pointLabels: { color: TICK, font: { family: "'Plus Jakarta Sans',sans-serif", size: 10, weight: '700' } }
+                        pointLabels: { color: TICK, font: { family: "'Plus Jakarta Sans',sans-serif", size: 10, weight: 'bold' as const } }
                     }
                 }
             }
