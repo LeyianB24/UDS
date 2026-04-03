@@ -87,6 +87,7 @@ $routes = [
     'POST:member_notifications' => ['file' => 'member_notifications.php',  'auth' => 'member'],
     'GET:member_welfare'        => ['file' => 'member_welfare.php',        'auth' => 'member'],
     'POST:member_settings'       => ['file' => 'member_settings.php',       'auth' => 'member'],
+    'GET:member_contributions'  => ['file' => 'member_contributions.php',  'auth' => 'member'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────

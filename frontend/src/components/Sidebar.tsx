@@ -16,12 +16,11 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Search,
   Banknote,
-  HeartPulse,
+  Activity,
   PieChart,
   ClipboardList,
-  Display,
+  Monitor,
   Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,7 +68,7 @@ export function Sidebar() {
   return (
     <>
       <button 
-        onClick={toggleCollapse}
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         className={cn(
           "fixed top-5 z-[60] w-8 h-8 rounded-lg bg-white border border-emerald-900/10 shadow-lg flex items-center justify-center text-emerald-900 transition-all duration-300 hover:bg-emerald-50",
           isCollapsed ? "left-[58px]" : "left-[250px]"
