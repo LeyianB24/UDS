@@ -17,7 +17,7 @@ import {
   LucideIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -37,10 +37,12 @@ export default function NotificationsPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const res = await fetchApi('member_notifications');
-    if (res.status === 'success') {
-      setNotifs(res.data.notifications);
-      setUnreadCount(res.data.unread_count);
+    try {
+      const res = await apiFetch('/api/v1/member_notifications.php');
+      setNotifs(res.notifications);
+      setUnreadCount(res.unread_count);
+    } catch (e) {
+      console.error(e);
     }
     setLoading(false);
   }, []);
@@ -50,12 +52,18 @@ export default function NotificationsPage() {
   }, [loadData]);
 
   const markRead = async (id: number | 'all') => {
-    const res = await fetchApi('member_notifications', 'POST', {
-      id: id === 'all' ? 0 : id,
-      all: id === 'all'
-    });
-    if (res.status === 'success') {
+    try {
+      const res = await apiFetch('/api/v1/member_notifications.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: id === 'all' ? 0 : id,
+          all: id === 'all'
+        })
+      });
       loadData();
+    } catch (e) {
+      console.error(e);
     }
   };
 

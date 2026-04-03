@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import Chart from 'chart.js/auto';
 import './shares.css';
 
@@ -16,12 +16,8 @@ export default function MemberShares() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const res = await fetchApi('member_shares', 'GET');
-            if (res.status === 'success') {
-                setData(res.data);
-            } else {
-                setError('Failed to load shares data');
-            }
+            const res = await apiFetch('/api/v1/member_shares.php');
+            setData(res.data);
         } catch (err: any) {
             setError(err.message || 'Error connecting to server');
         } finally {

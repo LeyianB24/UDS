@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import Chart from 'chart.js/auto';
 import './contributions.css';
 
@@ -35,12 +35,8 @@ export default function MemberContributions() {
             if (toFilter) params.append('to', toFilter);
             params.append('page', currentPage.toString());
             
-            const res = await fetchApi(`member_contributions?${params.toString()}`, 'GET');
-            if (res.status === 'success') {
-                setData(res.data);
-            } else {
-                setError('Failed to load contributions data');
-            }
+            const res = await apiFetch(`/api/v1/member_contributions.php?${params.toString()}`);
+            setData(res.data);
         } catch (err: any) {
             setError(err.message || 'Error connecting to server');
         } finally {

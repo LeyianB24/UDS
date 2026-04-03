@@ -45,12 +45,16 @@ export default function MpesaCheckoutPage() {
     setLoading(true);
     setStatus('processing');
     
-    const res = await fetchApi('mpesa_stk', 'POST', {
-      amount: parseFloat(amount),
-      phone,
-      contribution_type: type,
-      loan_id: loanId ? parseInt(loanId) : null,
-      case_id: caseId ? parseInt(caseId) : null
+    const res = await apiFetch('/api/v1/mpesa_stk.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: parseFloat(amount),
+        phone,
+        contribution_type: type,
+        loan_id: loanId ? parseInt(loanId) : null,
+        case_id: caseId ? parseInt(caseId) : null
+      })
     });
 
     if (res.status === 'success') {

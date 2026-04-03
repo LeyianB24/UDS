@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import './savings.css';
 
 export default function MemberSavings() {
@@ -26,12 +26,8 @@ export default function MemberSavings() {
             if (startDate) params.append('start_date', startDate);
             if (endDate) params.append('end_date', endDate);
             
-            const res = await fetchApi(`member_savings?${params.toString()}`, 'GET');
-            if (res.status === 'success') {
-                setData(res.data);
-            } else {
-                setError('Failed to load savings data');
-            }
+            const res = await apiFetch(`/api/v1/member_savings.php?${params.toString()}`);
+            setData(res.data);
         } catch (err: any) {
             setError(err.message || 'Error connecting to server');
         } finally {

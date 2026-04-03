@@ -19,7 +19,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -44,17 +44,20 @@ export default function SettingsPage() {
     setLoading(true);
     setMsg({ type: '', text: '' });
 
-    const res = await fetchApi('member_settings', 'POST', {
-      action: 'change_password',
-      old_password: form.old_password,
-      new_password: form.new_password
-    });
-
-    if (res.status === 'success') {
-       setMsg({ type: 'success', text: res.message });
-       setForm({ old_password: '', new_password: '', confirm_password: '' });
-    } else {
-       setMsg({ type: 'error', text: res.message });
+    try {
+      const res = await apiFetch('/api/v1/member_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'change_password',
+          old_password: form.old_password,
+          new_password: form.new_password
+        })
+      });
+      setMsg({ type: 'success', text: res.message });
+      setForm({ old_password: '', new_password: '', confirm_password: '' });
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.message });
     }
     setLoading(false);
   };
