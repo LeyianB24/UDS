@@ -3,7 +3,7 @@ $db_config = [
     'host'     => 'localhost',
     'user'     => 'root',
     'pass'     => '',
-    'dbname'   => 'umoja_drivers_sacco'
+    'dbname'   => 'umoja-drivers-sacco'
 ];
 
 $conn = new mysqli($db_config['host'], $db_config['user'], $db_config['pass'], $db_config['dbname']);
