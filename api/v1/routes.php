@@ -69,6 +69,7 @@ $routes = [
     'GET:search_members'        => ['file' => 'search_members.php',        'auth' => 'admin'],
     'GET:members'               => ['file' => 'members.php',               'auth' => 'admin'],
     'GET:member_savings'        => ['file' => 'member_savings.php',        'auth' => 'admin'],
+    'GET:member_shares'         => ['file' => 'member_shares.php',         'auth' => 'admin'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────
