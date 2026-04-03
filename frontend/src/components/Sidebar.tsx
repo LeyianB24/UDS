@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 
 const adminLinks = [
   { group: "General", items: [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   ]},
   { group: "Member Management", items: [
     { name: 'Member Onboarding', href: '/admin/onboarding', icon: UserPlus },
@@ -85,7 +85,7 @@ export function Sidebar() {
       >
         {/* Brand */}
         <div className="h-[72px] flex items-center px-4 border-b border-emerald-900/5 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-3 overflow-hidden">
+          <Link href="/admin/dashboard" className="flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 bg-[#0b2419] rounded-xl flex items-center justify-center p-2.5 shrink-0 shadow-xl shadow-emerald-950/20">
                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter invert brightness-0 invert" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'} />
             </div>
