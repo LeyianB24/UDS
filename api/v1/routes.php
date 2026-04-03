@@ -67,6 +67,7 @@ $routes = [
     'GET:auth_status'           => ['file' => 'auth_status.php',           'auth' => 'none'],
     'POST:login'                => ['file' => 'login.php',                 'auth' => 'none'],
     'POST:register'             => ['file' => 'register.php',              'auth' => 'none'],
+    'POST:forgot_password'      => ['file' => 'forgot_password.php',       'auth' => 'none'],
     'GET:search_members'        => ['file' => 'search_members.php',        'auth' => 'admin'],
     'GET:members'               => ['file' => 'members.php',               'auth' => 'admin'],
     
