@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { LandingNavbar } from '@/components/LandingNavbar';
 import { LandingFooter } from '@/components/LandingFooter';
+import Link from 'next/link';
 import './landing.css';
 
 export default function LandingPage() {

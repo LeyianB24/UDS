@@ -1,3 +1,237 @@
+/* ─── Navbar Shell ─── */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+}
+.site-navbar {
+    background: linear-gradient(135deg, #0B1E17 0%, #0F392B 60%, #0d2e22 100%);
+    border-bottom: 1px solid rgba(163,230,53,0.15);
+    padding: 0;
+    box-shadow: 0 2px 24px rgba(0,0,0,0.22);
+    height: 68px;
+    display: flex;
+    align-items: center;
+}
+
+/* ─── Brand ─── */
+.nb-brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.nb-logo-wrap {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    border: 1.5px solid rgba(163,230,53,0.3);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    flex-shrink: 0;
+}
+.nb-logo-wrap img { width: 100%; height: 100%; object-fit: contain; padding: 4px; display: block; }
+.nb-brand-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.2px;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.nb-brand-tagline {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    white-space: nowrap;
+}
+
+/* ─── Nav Links ─── */
+.nb-nav { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0; padding: 0; flex-wrap: wrap; }
+.nb-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 13px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+}
+.nb-nav-link:hover { color: #fff; background: rgba(255,255,255,0.07); }
+.nb-nav-link.active {
+    color: #A3E635;
+    background: rgba(163,230,53,0.1);
+}
+
+/* ─── Vertical Divider ─── */
+.nb-divider {
+    width: 1px; height: 22px;
+    background: rgba(255,255,255,0.1);
+    margin: 0 6px;
+    flex-shrink: 0;
+}
+
+/* ─── Auth Buttons ─── */
+.btn-nb-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.2);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.btn-nb-login:hover { border-color: rgba(255,255,255,0.5); color: #fff; background: rgba(255,255,255,0.06); }
+
+.btn-nb-register {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #0F392B;
+    background: #A3E635;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(163,230,53,0.28);
+    white-space: nowrap;
+}
+.btn-nb-register:hover { background: #bde32a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(163,230,53,0.38); color: #0F392B; }
+
+/* ─── Theme Toggle ─── */
+.nb-theme-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.nb-theme-btn:hover { background: rgba(163,230,53,0.12); color: #A3E635; border-color: rgba(163,230,53,0.25); }
+
+/* ─── Account Dropdown ─── */
+.nb-account-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px 6px 7px;
+    border-radius: 10px;
+    background: rgba(163,230,53,0.1);
+    border: 1px solid rgba(163,230,53,0.2);
+    color: #A3E635;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.nb-account-trigger:hover { background: rgba(163,230,53,0.18); color: #A3E635; }
+.nb-account-trigger .nb-avatar {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0F392B, #1a5c43);
+    color: #A3E635;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.nb-dropdown {
+    border: 1px solid #E8F0ED;
+    border-radius: 16px;
+    box-shadow: 0 14px 44px rgba(15,57,43,0.12);
+    padding: 6px;
+    margin-top: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-width: 200px;
+}
+.nb-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #0F392B;
+    text-decoration: none;
+    transition: background 0.18s;
+}
+.nb-dropdown-item:hover { background: #F7FBF9; color: #0F392B; }
+.nb-dropdown-item.danger { color: #dc2626; }
+.nb-dropdown-item.danger:hover { background: #FEE2E2; }
+.nb-dropdown-icon {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: #F0F7F4;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    color: #0F392B;
+}
+.nb-dropdown-item.danger .nb-dropdown-icon { background: #FEE2E2; color: #dc2626; }
+.nb-dropdown-divider { height: 1px; background: #E8F0ED; margin: 5px 4px; }
+
+/* ─── Mobile Toggle Button ─── */
+.nb-mobile-toggle {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.nb-mobile-toggle:hover { background: rgba(163,230,53,0.12); color: #A3E635; border-color: rgba(163,230,53,0.2); }
+
+/* ─── Mobile Collapse ─── */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: #0d2218;
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 12px;
+        border: 1px solid rgba(255,255,255,0.07);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+    }
+    .nb-nav { flex-direction: column; align-items: stretch; gap: 2px; }
+    .nb-nav-link { padding: 10px 14px; }
+    .nb-divider { display: none; }
+    .btn-nb-login,
+    .btn-nb-register { width: 100%; justify-content: center; margin-bottom: 6px; padding: 11px; }
+    .nb-account-trigger { width: 100%; justify-content: center; }
+    .nb-theme-btn { margin-left: auto; }
+}
+
 .lp-eyebrow {
     display: inline-flex;
     align-items: center;
