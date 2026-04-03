@@ -67,3 +67,8 @@ body {
   font-weight: 700;
   color: var(--brand-forest);
 }
+
+/* Fix Tailwind conflicting with Bootstrap's .collapse utility */
+.collapse:not(table, tbody, tr, td, th) {
+  visibility: visible;
+}
