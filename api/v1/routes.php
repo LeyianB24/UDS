@@ -59,7 +59,8 @@ $routes = [
     'GET:export_revenue'        => ['file' => 'export_revenue.php',        'auth' => 'admin'],
     'GET:generate_statement'    => ['file' => 'generate_statement.php',    'auth' => 'admin'],
 
-    // Admin API — Charts
+    // Admin API — Charts & Stats
+    'GET:get_stats'             => ['file' => 'get_stats.php',             'auth' => 'admin'],
     'GET:get_chart_data'        => ['file' => 'get_chart_data.php',        'auth' => 'admin'],
 
     // Shared — Search
