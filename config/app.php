@@ -97,7 +97,7 @@ $db_config = [
     'host'     => 'localhost',
     'user'     => 'root',
     'pass'     => '',
-    'dbname'   => 'umoja_drivers_sacco',
+    'dbname'   => 'umoja-drivers-sacco',
     'charset'  => 'utf8mb4'
 ];
 
