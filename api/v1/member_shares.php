@@ -57,7 +57,8 @@ if ($method === 'GET') {
             'portfolio_value' => $portfolioValue,
             'gain_pct' => $gainPct,
             'ownership_pct' => $ownership_pct,
-            'projected_dividend' => $projectedDividend
+            'projected_dividend' => $projectedDividend,
+            'total_units' => $totalUnits
         ],
         'history' => $transactions,
         'chart' => [
