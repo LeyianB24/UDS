@@ -63,7 +63,9 @@ $routes = [
     'GET:get_stats'             => ['file' => 'get_stats.php',             'auth' => 'admin'],
     'GET:get_chart_data'        => ['file' => 'get_chart_data.php',        'auth' => 'admin'],
 
-    // Shared — Search
+    // Shared — Auth & Status
+    'GET:auth_status'           => ['file' => 'auth_status.php',           'auth' => 'none'],
+    'POST:login'                => ['file' => 'login.php',                 'auth' => 'none'],
     'GET:search_members'        => ['file' => 'search_members.php',        'auth' => 'admin'],
 ];
 
