@@ -1,215 +1,420 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  HeartPulse, 
-  History, 
-  HelpCircle, 
-  ShieldCheck, 
-  PlusCircle, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  ChevronRight, 
-  Info, 
-  ArrowLeft,
-  LifeBuoy,
-  Stethoscope,
-  Heart,
-  Users
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { fetchApi } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import { Chart, registerables } from 'chart.js';
+import './welfare.css';
 
-interface WelfareTxn {
-  transaction_id: number;
-  transaction_type: string;
-  amount: number;
-  notes: string;
-  created_at: string;
-}
+Chart.register(...registerables);
 
-interface WelfareBenefit {
-  situation_id: number;
-  title: string;
-  description: string;
-  max_amount: number;
-}
+const kf = (v: number) => `KES ${Number(v).toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+const CHIP: Record<string, string> = {
+    completed: 'chip-grn', active: 'chip-grn', approved: 'chip-grn', funded: 'chip-grn',
+    pending: 'chip-amb', disbursed: 'chip-grn', rejected: 'chip-red', closed: 'chip-grey',
+};
 
 export default function WelfarePage() {
-  const [data, setData] = useState<{ welfare_balance: number; history: WelfareTxn[]; benefits: WelfareBenefit[] } | null>(null);
-  const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'contributions' | 'community' | 'received' | 'cases'>('contributions');
+    const [caseForm, setCaseForm] = useState({ title: '', description: '', requested_amount: '' });
+    const [caseLoading, setCaseLoading] = useState(false);
+    const [caseMsg, setCaseMsg] = useState<{ type: string; text: string } | null>(null);
+    const chartRef = useRef<HTMLCanvasElement>(null);
+    const chartInstance = useRef<Chart | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const res = await fetchApi('member_welfare');
-    if (res.status === 'success') {
-      setData(res.data);
-    }
-    setLoading(false);
-  }, []);
+    useEffect(() => {
+        apiFetch('/api/v1/member_welfare.php')
+            .then(r => { setData(r); setLoading(false); })
+            .catch(e => { setError(e.message); setLoading(false); });
+    }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+    useEffect(() => {
+        if (!data || !chartRef.current) return;
+        if (chartInstance.current) chartInstance.current.destroy();
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        chartInstance.current = new Chart(chartRef.current, {
+            type: 'bar',
+            data: {
+                labels: data.chart_labels ?? [],
+                datasets: [{
+                    label: 'Welfare Contributions',
+                    data: data.chart_values ?? [],
+                    backgroundColor: 'rgba(163,230,53,0.25)',
+                    borderColor: '#a3e635',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: isDark ? '#0d1d14' : '#fff',
+                        titleColor: isDark ? '#d8eee2' : '#0b2419',
+                        bodyColor: isDark ? '#4d7a60' : '#456859',
+                        borderColor: 'rgba(11,36,25,.08)', borderWidth: 1, padding: 12,
+                        callbacks: { label: (c) => `KES ${(c.parsed.y ?? 0).toLocaleString()}` }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#6b8a7a', font: { size: 11 } } },
+                    y: { grid: { color: 'rgba(11,36,25,.05)' }, ticks: { color: '#6b8a7a', font: { size: 11 }, callback: (v) => `KES ${Number(v).toLocaleString()}` } }
+                }
+            }
+        });
+    }, [data]);
 
-  if (loading && !data) return (
-    <div className="flex flex-col items-center justify-center h-[60vh]">
-       <div className="w-12 h-12 border-4 border-[#0b2419] border-t-lime-400 rounded-full animate-spin mb-4" title="Loading Solidarity Fund" />
-       <p className="text-[#0b2419]/40 text-[11px] font-black uppercase tracking-[2px]">Securing Social Fund...</p>
-    </div>
-  );
+    const handleCaseSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCaseLoading(true); setCaseMsg(null);
+        try {
+            const res = await apiFetch('/api/v1/member_welfare.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(caseForm)
+            });
+            setCaseMsg({ type: 'success', text: res.message || 'Case submitted!' });
+            setCaseForm({ title: '', description: '', requested_amount: '' });
+            setTimeout(() => window.location.reload(), 1800);
+        } catch (err: any) {
+            setCaseMsg({ type: 'error', text: err.message || 'Failed to submit.' });
+        } finally { setCaseLoading(false); }
+    };
 
-  const benefits = data!.benefits;
-  const history = data!.history;
+    if (loading) return (
+        <div className="wf-loading">
+            <div className="wf-spinner"></div>
+            <p>Loading welfare data...</p>
+        </div>
+    );
 
-  return (
-    <div className="pb-20">
-      
-      {/* Hero Header */}
-      <div className="relative bg-[#0b2419] rounded-[40px] overflow-hidden p-12 md:p-16 pb-32 text-white shadow-2xl">
-         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_105%_-5%,rgba(163,230,53,0.15)_0%,transparent_55%)]" />
-         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-         
-         <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-8">
-            <div>
-               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[3px] mb-6">
-                  <LifeBuoy size={12} className="text-lime-400" /> Solidarity Hub
-               </div>
-               <h1 className="text-5xl font-black tracking-tighter mb-3 transition-transform hover:scale-[1.01] cursor-default">Welfare Fund</h1>
-               <p className="text-white/40 text-sm font-medium max-w-lg">Your safety net for life&apos;s unexpected moments. We stand together in times of need.</p>
-            </div>
-            <Link href="/member/dashboard" className="h-12 px-6 bg-white/5 border border-white/10 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2">
-               <ArrowLeft size={16} /> Dashboard
-            </Link>
-         </div>
-      </div>
+    if (error) return (
+        <div className="wf-error-banner">
+            <i className="bi bi-exclamation-triangle-fill"></i> {error}
+        </div>
+    );
 
-      {/* Stats Float */}
-      <div className="max-w-6xl mx-auto px-6 -mt-16 relative z-20">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div className="bg-white border border-emerald-900/5 rounded-[40px] p-10 shadow-xl flex flex-col items-center justify-center text-center">
-               <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mb-6">
-                  <HeartPulse size={36} />
-               </div>
-               <p className="text-[10px] font-black uppercase tracking-[2px] text-slate-300 mb-2">Fund Balance</p>
-               <h2 className="text-4xl font-black tracking-tighter text-[#0b2419]">KES {data!.welfare_balance.toLocaleString()}</h2>
-            </div>
+    const { welfare_pool = 0, total_given = 0, total_received = 0, net_standing = 0,
+        withdrawable = 0, contributions = [], support_received = [], member_cases = [], community_cases = [] } = data || {};
 
-            <div className="md:col-span-2 bg-white border border-emerald-900/5 rounded-[40px] p-10 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-lime-400 opacity-5 rounded-bl-[100%] -mr-16 -mt-16" />
-               <div className="shrink-0 text-center md:text-left">
-                  <h3 className="text-xl font-black text-[#0b2419] tracking-tight mb-2">Need Assistance?</h3>
-                  <p className="text-slate-400 text-sm font-medium mb-6 max-w-sm">If you are facing a welfare situation, request support from the committee.</p>
-                  <Link href="/member/support" className="inline-flex items-center gap-2 h-12 px-8 bg-[#0b2419] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95">
-                     Request Support <PlusCircle size={16} />
-                  </Link>
-               </div>
-               <div className="flex-1 grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2">
-                     <Users className="text-emerald-600" size={24} />
-                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Members</p>
-                     <p className="text-xs font-black text-[#0b2419]">Verified</p>
-                  </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center gap-2">
-                     <ShieldCheck className="text-lime-500" size={24} />
-                     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Claims Policy</p>
-                     <p className="text-xs font-black text-[#0b2419]">Active</p>
-                  </div>
-               </div>
-            </div>
+    const isContributor = net_standing >= 0;
 
-         </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="max-w-6xl mx-auto px-6 mt-12 grid grid-cols-1 lg:grid-cols-2 gap-10">
-         
-         {/* Left: History */}
-         <div className="space-y-8">
-            <div className="flex items-center justify-between px-2">
-               <h3 className="text-sm font-black text-[#0b2419] uppercase tracking-widest flex items-center gap-2">
-                  <History size={16} className="text-emerald-600" /> Fund Contributions
-               </h3>
-               <Link href="/member/transactions?type=welfare_ledger" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0b2419]">View All</Link>
-            </div>
-            
-            <div className="bg-white border border-emerald-900/5 rounded-[40px] shadow-sm overflow-hidden">
-               <div className="divide-y divide-slate-50">
-                  {history.length > 0 ? history.map((t, idx) => (
-                    <div key={idx} className="p-6 flex items-center justify-between group hover:bg-slate-50 transition-all">
-                       <div className="flex items-center gap-4">
-                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", t.amount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600")}>
-                             {t.amount > 0 ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
-                          </div>
-                          <div>
-                             <h4 className="text-sm font-black text-[#0b2419] tracking-tight">{t.transaction_type.replace(/_/g, ' ')}</h4>
-                             <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{new Date(t.created_at).toLocaleDateString()}</p>
-                          </div>
-                       </div>
-                       <div className={cn("text-sm font-black tracking-tighter", t.amount > 0 ? "text-emerald-500" : "text-red-500")}>
-                          {t.amount > 0 ? '+' : ''} {t.amount.toLocaleString()}
-                       </div>
+    return (
+        <div className="wf-page">
+            {/* ── HERO ── */}
+            <div className="wf-hero">
+                <div className="wf-hero-mesh"></div>
+                <div className="wf-hero-dots"></div>
+                <div className="wf-hero-ring r1"></div>
+                <div className="wf-hero-ring r2"></div>
+                <div className="wf-hero-inner">
+                    <div className="wf-hero-nav">
+                        <Link href="/member/dashboard" className="wf-back">
+                            <i className="bi bi-arrow-left"></i> Dashboard
+                        </Link>
+                        <span className="wf-brand-tag">UMOJA SACCO</span>
                     </div>
-                  )) : (
-                    <div className="py-20 text-center opacity-40">
-                       <HelpCircle size={40} className="mx-auto mb-4" />
-                       <p className="text-xs font-bold uppercase tracking-widest">No history found</p>
+
+                    <div className="wf-hero-grid">
+                        <div>
+                            <div className="wf-eyebrow"><div className="wf-ey-line"></div>Welfare Fund</div>
+                            <div className="wf-hero-lbl">Global Solidarity Pool</div>
+                            <div className="wf-hero-amount">
+                                <span className="wf-cur">KES</span>
+                                {Number(welfare_pool).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className={`wf-pill ${isContributor ? 'green' : 'rose'}`}>
+                                <span className="wf-pill-dot" style={{ background: isContributor ? '#a3e635' : '#f43f5e' }}></span>
+                                Community {isContributor ? 'Contributor' : 'Beneficiary'} · {net_standing >= 0 ? '+' : ''}{kf(net_standing)} net
+                            </div>
+                            <div className="wf-hero-ctas">
+                                <Link href="/member/mpesa?type=welfare" className="wf-btn-lime">
+                                    <i className="bi bi-heart-fill"></i> Contribute
+                                </Link>
+                                <button className="wf-btn-ghost" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.showModal()}>
+                                    <i className="bi bi-plus-circle"></i> Report Case
+                                </button>
+                                {withdrawable > 0 && (
+                                    <Link href="/member/withdraw?type=welfare" className="wf-btn-ghost-red">
+                                        <i className="bi bi-wallet2"></i> Withdraw Benefit
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="wf-pool-block">
+                            <div className="wf-pool-lbl">Your Standing</div>
+                            <div className="wf-pool-rows">
+                                <div className="wf-pool-item">
+                                    <div className="wf-pool-ico green"><i className="bi bi-heart-fill"></i></div>
+                                    <div>
+                                        <div className="wf-pool-val">{kf(total_given)}</div>
+                                        <div className="wf-pool-sub">Total Contributed</div>
+                                    </div>
+                                </div>
+                                <div className="wf-pool-item">
+                                    <div className="wf-pool-ico red"><i className="bi bi-arrow-down-left-circle-fill"></i></div>
+                                    <div>
+                                        <div className="wf-pool-val">{kf(total_received)}</div>
+                                        <div className="wf-pool-sub">Support Received</div>
+                                    </div>
+                                </div>
+                                {withdrawable > 0 && (
+                                    <div className="wf-pool-item">
+                                        <div className="wf-pool-ico amber"><i className="bi bi-wallet2"></i></div>
+                                        <div>
+                                            <div className="wf-pool-val">{kf(withdrawable)}</div>
+                                            <div className="wf-pool-sub">Withdrawable Benefit</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                  )}
-               </div>
+                </div>
             </div>
-         </div>
 
-         {/* Right: Benefits */}
-         <div className="space-y-8">
-            <h3 className="text-sm font-black text-[#0b2419] uppercase tracking-widest px-2 flex items-center gap-2">
-               <Heart size={16} className="text-red-500" /> Welfare Benefits
-            </h3>
-            
-            <div className="grid grid-cols-1 gap-4">
-               {benefits.length > 0 ? benefits.map((b) => (
-                 <div key={b.situation_id} className="bg-white border border-emerald-900/5 rounded-3xl p-6 shadow-sm hover:border-lime-400/30 transition-all group">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-50 text-[#0b2419] rounded-xl flex items-center justify-center group-hover:bg-lime-400 transition-all">
-                             <Stethoscope size={18} />
-                          </div>
-                          <div>
-                             <h4 className="text-sm font-black text-[#0b2419] tracking-tight">{b.title}</h4>
-                             <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Max Benefit: KES {b.max_amount.toLocaleString()}</p>
-                          </div>
-                       </div>
-                       <ChevronRight size={18} className="text-slate-200" />
+            {/* ── FLOATING STAT CARDS ── */}
+            <div className="wf-stats-float">
+                <div className="wf-stats-grid">
+                    <div className="wsc sc-g">
+                        <div className="wsc-ico" style={{ background: 'rgba(22,163,74,.08)', color: '#16a34a' }}><i className="bi bi-heart-fill"></i></div>
+                        <div className="wsc-lbl">My Contributions</div>
+                        <div className="wsc-val">{kf(total_given)}</div>
+                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#16a34a', width: '100%' }}></div></div>
+                        <div className="wsc-meta">Lifetime welfare contributions</div>
                     </div>
-                    <p className="text-xs font-medium text-slate-500 leading-relaxed">{b.description}</p>
-                 </div>
-               )) : (
-                 <div className="bg-slate-50/50 border border-emerald-900/5 rounded-3xl p-10 text-center">
-                    <Info size={32} className="mx-auto mb-4 text-slate-200" />
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Standard benefits policy active.</p>
-                 </div>
-               )}
+                    <div className="wsc sc-r">
+                        <div className="wsc-ico" style={{ background: 'rgba(220,38,38,.08)', color: '#dc2626' }}><i className="bi bi-arrow-down-left-square-fill"></i></div>
+                        <div className="wsc-lbl">Support Received</div>
+                        <div className="wsc-val">{kf(total_received)}</div>
+                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#dc2626', width: `${total_given > 0 ? Math.min(100, (total_received / total_given) * 100) : 0}%` }}></div></div>
+                        <div className="wsc-meta">Total support disbursed to you</div>
+                    </div>
+                    <div className={`wsc ${isContributor ? 'sc-l' : 'sc-r'}`}>
+                        <div className="wsc-ico" style={{ background: isContributor ? 'rgba(163,230,53,.14)' : 'rgba(220,38,38,.08)', color: isContributor ? '#5a8a1a' : '#dc2626' }}>
+                            <i className="bi bi-scale"></i>
+                        </div>
+                        <div className="wsc-lbl">Net Impact</div>
+                        <div className="wsc-val" style={{ color: isContributor ? '#16a34a' : '#dc2626' }}>
+                            {net_standing >= 0 ? '+' : ''}{kf(net_standing)}
+                        </div>
+                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: isContributor ? '#a3e635' : '#dc2626', width: `${Math.min(100, Math.abs(net_standing / (total_given || 1)) * 100)}%` }}></div></div>
+                        <div className="wsc-meta">Community {isContributor ? 'Contributor' : 'Beneficiary'} status</div>
+                    </div>
+                    <div className="wsc sc-a">
+                        <div className="wsc-ico" style={{ background: 'rgba(217,119,6,.08)', color: '#d97706' }}><i className="bi bi-wallet2"></i></div>
+                        <div className="wsc-lbl">Withdrawable</div>
+                        <div className="wsc-val">{kf(withdrawable)}</div>
+                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#d97706', width: withdrawable > 0 ? '80%' : '0%' }}></div></div>
+                        <div className="wsc-meta">Available for withdrawal now</div>
+                    </div>
+                </div>
             </div>
 
-            {/* Info Block */}
-            <div className="bg-emerald-900 rounded-[32px] p-10 text-white relative overflow-hidden group">
-               <div className="relative z-10">
-                  <h4 className="text-[10px] font-black text-emerald-400 uppercase tracking-[2px] mb-6">Engagement Policy</h4>
-                  <p className="text-sm font-bold text-white/70 leading-relaxed mb-6">Members must have a consistent contribution history of at least 6 months to qualify for full welfare payouts.</p>
-                  <div className="h-px bg-white/10 mb-6" />
-                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-white/40">
-                     <Users size={14} /> Shared Responsibility
-                  </div>
-               </div>
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_90%,rgba(163,230,53,0.1),transparent)]" />
+            {/* ── BODY ── */}
+            <div className="wf-body">
+                {/* Chart + Policy */}
+                <div className="wf-chart-row">
+                    <div className="wf-chart-card">
+                        <div className="wf-cc-head">
+                            <span className="wf-cc-title">Contribution Trend</span>
+                            <span className="wf-cc-badge"><i className="bi bi-activity"></i> Lifetime</span>
+                        </div>
+                        <div className="wf-chart-wrap">
+                            <canvas ref={chartRef}></canvas>
+                        </div>
+                    </div>
+                    <div className="wf-policy-card">
+                        <div className="wf-policy-inner">
+                            <div className="wf-policy-title">Welfare Policy</div>
+                            <p className="wf-policy-desc">Contributions assist members during bereavement and hospitalization. Active membership status is required to be eligible for support.</p>
+                            <div className="wf-policy-items">
+                                {['Bereavement Support', 'Medical Emergency', 'Community Fundraisers'].map(item => (
+                                    <div key={item} className="wf-policy-item">
+                                        <div className="wf-policy-check"><i className="bi bi-check-lg"></i></div>
+                                        <span>{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tab Card */}
+                <div className="wf-tab-card">
+                    <div className="wf-tab-head">
+                        <div className="wf-tab-pills">
+                            {(['contributions', 'community', 'received', 'cases'] as const).map(tab => (
+                                <button key={tab} className={`wf-tpill ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
+                                    {{ contributions: 'Contributions', community: 'Community', received: 'Support Received', cases: 'My Cases' }[tab]}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ── Contributions Tab ── */}
+                    {activeTab === 'contributions' && (
+                        <div className="wf-table-wrap">
+                            {contributions.length === 0 ? (
+                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-heart"></i></div><div className="wf-empty-title">No Contributions Yet</div><div className="wf-empty-sub">Your welfare contributions will appear here.</div></div>
+                            ) : (
+                                <table className="wf-table">
+                                    <thead><tr><th>Date</th><th>Reference</th><th>Type</th><th>Status</th><th className="text-right">Amount</th></tr></thead>
+                                    <tbody>
+                                        {contributions.map((c: any, i: number) => (
+                                            <tr key={i}>
+                                                <td>
+                                                    <div className="wf-cell-date">{new Date(c.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                                                    <div className="wf-cell-time">{new Date(c.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}</div>
+                                                </td>
+                                                <td><span className="wf-ref">{c.reference_no || 'N/A'}</span></td>
+                                                <td className="wf-cell-type">Welfare Contribution</td>
+                                                <td><span className={`wf-chip ${CHIP[c.status?.toLowerCase()] || 'chip-grey'}`}>{c.status}</span></td>
+                                                <td className="text-right"><span className="wf-amt-in">+ {kf(c.amount)}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── Community Tab ── */}
+                    {activeTab === 'community' && (
+                        <div className="wf-community-grid">
+                            {community_cases.length === 0 ? (
+                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-emoji-smile"></i></div><div className="wf-empty-title">All Clear</div><div className="wf-empty-sub">No active community situations. The SACCO is doing well!</div></div>
+                            ) : community_cases.map((c: any, i: number) => {
+                                const target = parseFloat(c.target_amount || c.requested_amount || 0);
+                                const raised = parseFloat(c.total_raised || 0);
+                                const pct = target > 0 ? Math.min(100, (raised / target) * 100) : 0;
+                                const stKey = c.status?.toLowerCase();
+                                return (
+                                    <div key={i} className="wf-case-card">
+                                        <div className="wf-case-top">
+                                            <div className="wf-case-meta">
+                                                <span className="wf-case-id">Case #{c.case_id}</span>
+                                                <span className={`wf-case-chip cs-${stKey}`}>{c.status}</span>
+                                            </div>
+                                            <div className="wf-case-title">{c.title}</div>
+                                        </div>
+                                        <div className="wf-case-body">
+                                            <p className="wf-case-desc">{c.description}</p>
+                                            <div className="wf-case-prog-row">
+                                                <span className="wf-case-raised">{kf(raised)}</span>
+                                                <span className="wf-case-target">Target: {kf(target)}</span>
+                                            </div>
+                                            <div className="wf-case-prog-track"><div className="wf-case-prog-fill" style={{ width: `${pct}%` }}></div></div>
+                                            <div className="wf-case-footer">
+                                                <span className="wf-donors"><i className="bi bi-people"></i> {c.donor_count ?? 0} donors</span>
+                                                <Link href={`/member/mpesa?type=welfare_case&case_id=${c.case_id}`} className="wf-btn-support">
+                                                    <i className="bi bi-heart-fill"></i> Support
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* ── Support Received Tab ── */}
+                    {activeTab === 'received' && (
+                        <div className="wf-table-wrap">
+                            {support_received.length === 0 ? (
+                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-inbox"></i></div><div className="wf-empty-title">No Support Records</div><div className="wf-empty-sub">No welfare support has been disbursed to your account yet.</div></div>
+                            ) : (
+                                <table className="wf-table">
+                                    <thead><tr><th>Date</th><th>Reason</th><th>Approved By</th><th>Status</th><th className="text-right">Amount</th></tr></thead>
+                                    <tbody>
+                                        {support_received.map((s: any, i: number) => (
+                                            <tr key={i}>
+                                                <td><div className="wf-cell-date">{new Date(s.date_granted).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div></td>
+                                                <td><div className="wf-cell-title">{s.reason || 'Welfare Support'}</div></td>
+                                                <td className="wf-cell-by">SACCO Admin</td>
+                                                <td><span className={`wf-chip ${CHIP[s.status?.toLowerCase()] || 'chip-grey'}`}>{s.status}</span></td>
+                                                <td className="text-right"><span className="wf-amt-out">− {kf(s.amount)}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── My Cases Tab ── */}
+                    {activeTab === 'cases' && (
+                        <div className="wf-table-wrap">
+                            {member_cases.length === 0 ? (
+                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-folder2-open"></i></div><div className="wf-empty-title">No Cases Found</div><div className="wf-empty-sub">No welfare cases are associated with your account.</div></div>
+                            ) : (
+                                <table className="wf-table">
+                                    <thead><tr><th>Date</th><th>Title</th><th>Description</th><th>Status</th><th className="text-right">Approved Amount</th></tr></thead>
+                                    <tbody>
+                                        {member_cases.map((c: any, i: number) => (
+                                            <tr key={i}>
+                                                <td><div className="wf-cell-date">{new Date(c.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div></td>
+                                                <td><div className="wf-cell-title">{c.title}</div></td>
+                                                <td><div className="wf-cell-desc">{c.description}</div></td>
+                                                <td><span className={`wf-chip ${CHIP[c.status?.toLowerCase()] || 'chip-grey'}`}>{c.status}</span></td>
+                                                <td className="text-right"><span className="wf-amt-neu">{kf(c.approved_amount || 0)}</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
-         </div>
 
-      </div>
-
-    </div>
-  );
+            {/* ── REPORT CASE MODAL ── */}
+            <dialog id="caseModal" className="wf-modal">
+                <div className="wf-modal-inner">
+                    <div className="wf-modal-head">
+                        <div>
+                            <div className="wf-modal-title"><i className="bi bi-plus-circle-fill" style={{ color: '#16a34a' }}></i> Report Welfare Situation</div>
+                            <div className="wf-modal-sub">Describe the situation to request community support.</div>
+                        </div>
+                        <button className="wf-modal-close" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.close()}>
+                            <i className="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    {caseMsg && (
+                        <div className={`wf-modal-msg ${caseMsg.type === 'success' ? 'msg-ok' : 'msg-err'}`}>
+                            <i className={`bi ${caseMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
+                            {caseMsg.text}
+                        </div>
+                    )}
+                    <form onSubmit={handleCaseSubmit} className="wf-modal-body">
+                        <div className="wf-mf">
+                            <label className="wf-ml">Case Title</label>
+                            <input className="wf-mi" required placeholder="e.g. Bereavement — John Doe" value={caseForm.title} onChange={e => setCaseForm(p => ({ ...p, title: e.target.value }))} />
+                        </div>
+                        <div className="wf-mf">
+                            <label className="wf-ml">Description</label>
+                            <textarea className="wf-mt" rows={3} placeholder="Briefly describe the welfare situation..." value={caseForm.description} onChange={e => setCaseForm(p => ({ ...p, description: e.target.value }))}></textarea>
+                        </div>
+                        <div className="wf-mf">
+                            <label className="wf-ml">Requested Amount (KES)</label>
+                            <input type="number" className="wf-mi" required min={100} placeholder="0" value={caseForm.requested_amount} onChange={e => setCaseForm(p => ({ ...p, requested_amount: e.target.value }))} />
+                        </div>
+                        <div className="wf-modal-actions">
+                            <button type="button" className="wf-btn-cancel" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.close()}>Cancel</button>
+                            <button type="submit" className="wf-btn-submit" disabled={caseLoading}>
+                                {caseLoading ? 'Submitting...' : <><i className="bi bi-send-fill"></i> Submit Case</>}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+        </div>
+    );
 }
