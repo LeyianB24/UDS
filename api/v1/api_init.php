@@ -39,9 +39,12 @@ header('X-Content-Type-Options: nosniff');
 
 // 2. Response Helpers
 if (!function_exists('api_success')) {
-    function api_success(mixed $data = null, string $message = 'OK', int $code = 200): never
+    function api_success($data = null, string $message = 'OK', int $code = 200)
     {
-        http_response_code($code);
+        if (!headers_sent()) {
+            http_response_code($code);
+            header('Content-Type: application/json; charset=utf-8');
+        }
         echo json_encode([
             'status' => 'success',
             'message' => $message,
@@ -52,9 +55,12 @@ if (!function_exists('api_success')) {
 }
 
 if (!function_exists('api_error')) {
-    function api_error(string $message, int $code = 400, mixed $data = null): never
+    function api_error(string $message, int $code = 400, $data = null)
     {
-        http_response_code($code);
+        if (!headers_sent()) {
+            http_response_code($code);
+            header('Content-Type: application/json; charset=utf-8');
+        }
         echo json_encode([
             'status' => 'error',
             'message' => $message,
