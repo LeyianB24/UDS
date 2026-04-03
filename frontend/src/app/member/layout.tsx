@@ -3,7 +3,6 @@
 import React from 'react';
 import { MemberSidebar } from "@/components/MemberSidebar";
 import { MemberTopbar } from "@/components/MemberTopbar";
-import 'bootstrap-icons/font/bootstrap-icons.css';
 import './layout.css';
 
 export default function MemberLayout({
