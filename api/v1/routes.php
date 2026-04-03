@@ -84,7 +84,7 @@ $route = $routes[$key];
 
 // ── Auth Guard ────────────────────────────────────────────────────────────────
 match ($route['auth']) {
-    'admin'  => Auth::requireAdmin(),
+    'admin'  => \Auth::requireAdmin(),
     'member' => (function () {
         if (!isset($_SESSION['member_id'])) {
             api_error('Unauthorized', 401);

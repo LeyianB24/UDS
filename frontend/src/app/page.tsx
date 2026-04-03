@@ -9,17 +9,28 @@ import {
   ArrowUpRight, 
   Search,
   Filter,
-  Plus
+  Plus,
+  Settings,
+  ShieldCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DashboardCard } from '@/components/DashboardCard';
 import { fetchApi } from '@/lib/api';
 
-const stats = [
+interface DashboardStat {
+  label: string;
+  value: string | number;
+  icon: any;
+  trend: string;
+  trendType: 'up' | 'down' | 'neutral';
+  color: 'indigo' | 'emerald' | 'amber' | 'rose';
+}
+
+const stats: DashboardStat[] = [
   { label: 'Total Members', value: '----', icon: Users, trend: '+12%', trendType: 'up', color: 'indigo' },
   { label: 'Total Savings', value: 'KES 0.00', icon: DollarSign, trend: '+8.4%', trendType: 'up', color: 'emerald' },
-  { label: 'Active Loans', value: '42', icon: Briefcase, trend: '-2.1%', trendType: 'down', color: 'amber' },
-  { label: 'Pending Welfare', value: '5', icon: TrendingUp, trend: 'New', trendType: 'neutral', color: 'rose' },
+  { label: 'Active Loans', value: '0', icon: Briefcase, trend: 'stable', trendType: 'neutral', color: 'amber' },
+  { label: 'System Health', value: 'Optimal', icon: ShieldCheck, trend: 'Online', trendType: 'up', color: 'rose' },
 ];
 
 export default function Dashboard() {
