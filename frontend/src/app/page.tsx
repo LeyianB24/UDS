@@ -25,6 +25,7 @@ import {
 import { motion } from 'framer-motion';
 import { LandingNavbar } from '@/components/LandingNavbar';
 import { PokerSlideshow } from '@/components/PokerSlideshow';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 const fadeInUp = {
