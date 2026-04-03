@@ -67,6 +67,8 @@ $routes = [
     'GET:auth_status'           => ['file' => 'auth_status.php',           'auth' => 'none'],
     'POST:login'                => ['file' => 'login.php',                 'auth' => 'none'],
     'GET:search_members'        => ['file' => 'search_members.php',        'auth' => 'admin'],
+    'GET:members'               => ['file' => 'members.php',               'auth' => 'admin'],
+    'GET:member_savings'        => ['file' => 'member_savings.php',        'auth' => 'admin'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────
