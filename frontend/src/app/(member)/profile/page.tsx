@@ -10,18 +10,14 @@ import {
   Calendar, 
   ShieldCheck, 
   Camera, 
-  Trash2, 
   Save, 
   Upload, 
   CheckCircle2, 
   AlertCircle, 
-  ChevronRight, 
-  FileText,
   Clock,
   ShieldAlert,
   ArrowLeft
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { fetchApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -205,10 +201,10 @@ export default function MemberProfilePage() {
                     {initials}
                  </div>
                )}
-               <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#0b2419] text-lime-400 rounded-2xl border-4 border-white flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg">
-                  <Camera size={18} />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-               </label>
+                  <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#0b2419] text-lime-400 rounded-2xl border-4 border-white flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-lg" title="Change Photo">
+                     <Camera size={18} />
+                     <input type="file" title="Profile Picture" className="hidden" accept="image/*" onChange={handleFileChange} />
+                  </label>
             </div>
 
             <div className="flex-1">
