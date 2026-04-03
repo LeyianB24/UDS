@@ -5,22 +5,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
+  Wallet, 
   PiggyBank, 
   PieChart, 
-  Banknote, 
-  CalendarCheck, 
-  HeartPulse, 
-  SmartphoneNfc, 
-  WalletCards, 
-  ArrowLeftRight, 
-  Bell, 
-  UserCircle, 
-  Settings, 
-  Headset,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck
+  History, 
+  User, 
+  LogOut, 
+  ChevronLeft, 
+  ChevronRight, 
+  Menu,
+  Smartphone,
+  Landmark,
+  ArrowRightLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -32,21 +28,19 @@ const sidebarLinks = [
   { group: "Personal Finances", items: [
     { name: 'Savings', href: '/member/savings', icon: PiggyBank },
     { name: 'Shares Portfolio', href: '/member/shares', icon: PieChart },
-    { name: 'My Loans', href: '/member/loans', icon: Banknote },
-    { name: 'Contributions', href: '/member/contributions', icon: CalendarCheck },
+    { name: 'My Loans', href: '/member/loans', icon: Landmark },
+    { name: 'Contributions', href: '/member/contributions', icon: Wallet },
   ]},
   { group: "Welfare & Solidarity", items: [
-    { name: 'Welfare Hub', href: '/member/welfare', icon: HeartPulse },
+    { name: 'Welfare Hub', href: '/member/welfare', icon: History },
   ]},
   { group: "Utilities", items: [
-    { name: 'Pay Via M-Pesa', href: '/member/mpesa', icon: SmartphoneNfc },
-    { name: 'Withdraw Funds', href: '/member/withdraw', icon: WalletCards },
-    { name: 'Transactions', href: '/member/transactions', icon: ArrowLeftRight },
-    { name: 'Notifications', href: '/member/notifications', icon: Bell },
+    { name: 'Pay Via M-Pesa', href: '/member/mpesa', icon: Smartphone },
+    { name: 'Withdraw Funds', href: '/member/withdraw', icon: Wallet },
+    { name: 'Transactions', href: '/member/transactions', icon: ArrowRightLeft },
   ]},
   { group: "Account", items: [
-    { name: 'My Profile', href: '/member/profile', icon: UserCircle },
-    { name: 'Settings', href: '/member/settings', icon: Settings },
+    { name: 'My Profile', href: '/member/profile', icon: User },
   ]}
 ];
 
@@ -67,12 +61,17 @@ export function MemberSidebar() {
     localStorage.setItem('member_sb_collapsed', next ? '1' : '0');
   };
 
+  const handleLogout = () => {
+    // Add logout logic here
+  };
+
   if (!mounted) return <div className="w-68 h-screen bg-[#0b2419]" />;
 
   return (
     <>
       <button 
         onClick={toggleCollapse}
+        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         className={cn(
           "fixed top-6 z-[60] w-8 h-8 rounded-lg bg-white border border-emerald-900/10 shadow-lg flex items-center justify-center text-emerald-900 transition-all duration-300 hover:bg-emerald-50",
           isCollapsed ? "left-[58px]" : "left-[254px]"
@@ -129,6 +128,7 @@ export function MemberSidebar() {
                     <Link
                       key={iIdx}
                       href={item.href}
+                      title={item.name}
                       className={cn(
                         "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
                         isActive 
@@ -160,32 +160,20 @@ export function MemberSidebar() {
               </div>
             </div>
           ))}
-
-          {/* Support Widget */}
-          {!isCollapsed && (
-            <div className="mt-4 p-5 bg-emerald-950 rounded-2xl border border-emerald-800/30 text-center relative overflow-hidden group">
-               <div className="relative z-10">
-                 <h6 className="text-white text-xs font-black mb-1">Need Help?</h6>
-                 <p className="text-[10px] text-emerald-400/40 mb-4 px-2">Our support team is ready to assist you.</p>
-                 <Link href="/member/support" className="inline-flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-emerald-950 px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 shadow-[0_4px_15px_rgba(163,230,53,0.3)] hover:-translate-y-0.5">
-                    <Headset size={12} /> Open Ticket
-                 </Link>
-               </div>
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(163,230,53,0.1),transparent)] group-hover:scale-110 transition-transform duration-700" />
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div className="p-3 border-t border-emerald-800/20">
-          <button className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-400 font-bold hover:bg-red-500/10 transition-all duration-200",
-            isCollapsed && "justify-center"
-          )}>
-            <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-               <LogOut size={18} />
-            </div>
-            {!isCollapsed && <span className="text-sm">Sign Out</span>}
+          <button 
+            onClick={handleLogout}
+            title="Sign Out"
+            className={cn(
+               "w-full h-12 rounded-xl flex items-center gap-3 transition-all text-red-400/60 hover:bg-red-500/10 hover:text-red-400 mt-auto",
+               isCollapsed ? "justify-center px-0" : "px-4"
+            )}
+          >
+            <LogOut size={18} />
+            {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Sign Out</span>}
           </button>
         </div>
       </aside>

@@ -68,11 +68,19 @@ $routes = [
     'POST:login'                => ['file' => 'login.php',                 'auth' => 'none'],
     'GET:search_members'        => ['file' => 'search_members.php',        'auth' => 'admin'],
     'GET:members'               => ['file' => 'members.php',               'auth' => 'admin'],
-    'GET:member_savings'        => ['file' => 'member_savings.php',        'auth' => 'admin'],
-    'GET:member_shares'         => ['file' => 'member_shares.php',         'auth' => 'admin'],
-    'GET:member_loans'          => ['file' => 'member_loans.php',          'auth' => 'admin'],
-    'POST:apply_loan'           => ['file' => 'apply_loan.php',            'auth' => 'admin'],
-    'POST:mpesa_stk'            => ['file' => 'mpesa_stk.php',             'auth' => 'admin'],
+    
+    // Member Facing (Support both Admin & Member)
+    'GET:member_savings'        => ['file' => 'member_savings.php',        'auth' => 'both'],
+    'GET:member_shares'         => ['file' => 'member_shares.php',         'auth' => 'both'],
+    'GET:member_loans'          => ['file' => 'member_loans.php',          'auth' => 'both'],
+    'POST:apply_loan'           => ['file' => 'apply_loan.php',            'auth' => 'member'],
+    'POST:mpesa_stk'            => ['file' => 'mpesa_stk.php',             'auth' => 'member'],
+    'GET:loan_reviews'          => ['file' => 'loan_reviews.php',          'auth' => 'admin'],
+    'POST:loan_reviews'         => ['file' => 'loan_reviews.php',          'auth' => 'admin'],
+    'GET:member_profile'        => ['file' => 'member_profile.php',        'auth' => 'both'],
+    'POST:member_profile'       => ['file' => 'member_profile.php',        'auth' => 'both'],
+    'GET:withdraw'              => ['file' => 'withdraw.php',              'auth' => 'member'],
+    'POST:withdraw'             => ['file' => 'withdraw.php',              'auth' => 'member'],
 ];
 
 // ── Resolve the Incoming Request ──────────────────────────────────────────────
@@ -93,10 +101,15 @@ $route = $routes[$key];
 
 // ── Auth Guard ────────────────────────────────────────────────────────────────
 match ($route['auth']) {
-    'admin'  => \Auth::requireAdmin(),
+    'admin'  => Auth::requireAdmin(),
     'member' => (function () {
         if (!isset($_SESSION['member_id'])) {
-            api_error('Unauthorized', 401);
+            api_error('Unauthorized: Member login required', 401);
+        }
+    })(),
+    'both'   => (function () {
+        if (!isset($_SESSION['admin_id']) && !isset($_SESSION['member_id'])) {
+            api_error('Unauthorized: Login required', 401);
         }
     })(),
     default  => null,

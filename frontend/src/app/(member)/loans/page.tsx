@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
+  ArrowLeft,
+  Wallet,
+  TrendingUp,
+  ShieldCheck,
+  PlusCircle,
+  ArrowUpRight,
+  Hourglass,
   CheckCircle, 
   XSquare, 
   ChevronRight, 
