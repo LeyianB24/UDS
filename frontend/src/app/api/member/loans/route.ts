@@ -9,20 +9,33 @@ export async function GET() {
             return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
         }
 
-        const [loans]: any = await pool.execute(`SELECT * FROM loans WHERE member_id=? ORDER BY created_at DESC`, [session.id]);
+        const [loans]: any = await pool.execute(
+            `SELECT * FROM loans WHERE member_id=? ORDER BY created_at DESC`, 
+            [session.id]
+        );
+
+        let active_loan = null;
+        if (loans.length > 0 && ['pending', 'approved', 'active', 'disbursed'].includes(loans[0].status)) {
+            const l = loans[0];
+            const maxb = parseFloat(l.amount || 0) + parseFloat(l.interest_amount || 0);
+            const cur = parseFloat(l.current_balance || maxb);
+            const r = maxb > 0 ? ((maxb - cur) / maxb) * 100 : 0;
+
+            active_loan = {
+                progress_percent: r,
+                loan_type: l.loan_type,
+                current_balance: cur,
+                next_repayment_date: new Date(Date.now() + 86400000 * 30).toISOString(),
+                total_payable: maxb
+            };
+        }
 
         return NextResponse.json({
             status: 'success',
             data: {
-                active_loans: loans.length,
-                total_balance: loans.reduce((acc: number, cur: any) => acc + parseFloat(cur.balance || 0), 0),
-                next_payment: 0,
-                loans: loans,
-                eligibility: {
-                    max_amount: 500000,
-                    status: 'Eligible',
-                    reasons: []
-                }
+                limit: 500000,
+                active_loan: active_loan,
+                history: loans || []
             }
         });
     } catch (error: any) {

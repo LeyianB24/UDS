@@ -12,14 +12,21 @@ export async function GET() {
         return NextResponse.json({
             status: 'success',
             data: {
-                total_shares: 15000,
-                total_value: 30000,   // Assuming KES 2.0 per share
-                dividend_earned: 4500,
-                transactions: [],
-                chart: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    data: [5000, 5000, 10000, 10000, 15000, 15000]
-                }
+                portfolio_value: 30000,
+                gain_pct: 12.5,
+                units: 1500,
+                ownership_pct: 0.25,
+                share_price: 20,
+                projected_dividend: 4500,
+                chart_data: [
+                    { label: 'Jan', value: 5000 },
+                    { label: 'Feb', value: 5000 },
+                    { label: 'Mar', value: 10000 },
+                    { label: 'Apr', value: 10000 },
+                    { label: 'May', value: 15000 },
+                    { label: 'Jun', value: 15000 }
+                ],
+                history: []
             }
         });
     } catch (error: any) {

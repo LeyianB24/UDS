@@ -9,20 +9,32 @@ export async function GET() {
             return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
         }
 
-        const [txns]: any = await pool.execute(`SELECT * FROM transactions WHERE member_id=? AND transaction_type='deposit' ORDER BY created_at DESC LIMIT 10`, [session.id]);
+        const [txns]: any = await pool.execute(
+            `SELECT * FROM transactions WHERE member_id=? AND transaction_type IN ('deposit','contribution','withdrawal') ORDER BY created_at DESC LIMIT 20`, 
+            [session.id]
+        );
         
+        let total_deposited = 50000;
+        let total_withdrawn = 12000;
+        let net_savings = total_deposited - total_withdrawn;
+        let retention_rate = (net_savings / total_deposited) * 100;
+
         return NextResponse.json({
             status: 'success',
             data: {
-                total_savings: 45000,
-                monthly_target: 5000,
-                this_month: 2500,
-                interest_earned: 1250,
-                transactions: txns,
-                chart: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    data: [5000, 10000, 15000, 20000, 25000, 30000]
-                }
+                net_savings,
+                total_deposited,
+                total_withdrawn,
+                retention_rate,
+                trend: [
+                    { month: 'Jan', amount: 5000 },
+                    { month: 'Feb', amount: 10000 },
+                    { month: 'Mar', amount: 15000 },
+                    { month: 'Apr', amount: 20000 },
+                    { month: 'May', amount: 25000 },
+                    { month: 'Jun', amount: 30000 },
+                ],
+                history: txns || []
             }
         });
     } catch (error: any) {
