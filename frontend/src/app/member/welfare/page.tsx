@@ -1,420 +1,334 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
-import { Chart, registerables } from 'chart.js';
 import './welfare.css';
-
-Chart.register(...registerables);
-
-const kf = (v: number) => `KES ${Number(v).toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-
-const CHIP: Record<string, string> = {
-    completed: 'chip-grn', active: 'chip-grn', approved: 'chip-grn', funded: 'chip-grn',
-    pending: 'chip-amb', disbursed: 'chip-grn', rejected: 'chip-red', closed: 'chip-grey',
-};
 
 export default function WelfarePage() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'contributions' | 'community' | 'received' | 'cases'>('contributions');
-    const [caseForm, setCaseForm] = useState({ title: '', description: '', requested_amount: '' });
-    const [caseLoading, setCaseLoading] = useState(false);
-    const [caseMsg, setCaseMsg] = useState<{ type: string; text: string } | null>(null);
-    const chartRef = useRef<HTMLCanvasElement>(null);
-    const chartInstance = useRef<Chart | null>(null);
+    const [activeTab, setActiveTab] = useState('contributions');
+    const [submitting, setSubmitting] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [newCase, setNewCase] = useState({ title: '', description: '', requested_amount: '' });
+    const [flash, setFlash] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
-    useEffect(() => {
-        apiFetch('/api/v1/member_welfare.php')
-            .then(r => { setData(r); setLoading(false); })
-            .catch(e => { setError(e.message); setLoading(false); });
+    const loadWelfareData = useCallback(async () => {
+        try {
+            const res = await apiFetch('/api/member/welfare');
+            if (res.status === 'success') {
+                setData(res.data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => {
-        if (!data || !chartRef.current) return;
-        if (chartInstance.current) chartInstance.current.destroy();
-        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-        chartInstance.current = new Chart(chartRef.current, {
-            type: 'bar',
-            data: {
-                labels: data.chart_labels ?? [],
-                datasets: [{
-                    label: 'Welfare Contributions',
-                    data: data.chart_values ?? [],
-                    backgroundColor: 'rgba(163,230,53,0.25)',
-                    borderColor: '#a3e635',
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    borderSkipped: false,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: isDark ? '#0d1d14' : '#fff',
-                        titleColor: isDark ? '#d8eee2' : '#0b2419',
-                        bodyColor: isDark ? '#4d7a60' : '#456859',
-                        borderColor: 'rgba(11,36,25,.08)', borderWidth: 1, padding: 12,
-                        callbacks: { label: (c) => `KES ${(c.parsed.y ?? 0).toLocaleString()}` }
-                    }
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#6b8a7a', font: { size: 11 } } },
-                    y: { grid: { color: 'rgba(11,36,25,.05)' }, ticks: { color: '#6b8a7a', font: { size: 11 }, callback: (v) => `KES ${Number(v).toLocaleString()}` } }
-                }
-            }
-        });
-    }, [data]);
+        loadWelfareData();
+    }, [loadWelfareData]);
 
-    const handleCaseSubmit = async (e: React.FormEvent) => {
+    const handleReportCase = async (e: React.FormEvent) => {
         e.preventDefault();
-        setCaseLoading(true); setCaseMsg(null);
+        setSubmitting(true);
+        setFlash(null);
+
         try {
-            const res = await apiFetch('/api/v1/member_welfare.php', {
+            const res = await apiFetch('/api/member/welfare', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(caseForm)
+                body: JSON.stringify({ ...newCase, requested_amount: parseFloat(newCase.requested_amount) })
             });
-            setCaseMsg({ type: 'success', text: res.message || 'Case submitted!' });
-            setCaseForm({ title: '', description: '', requested_amount: '' });
-            setTimeout(() => window.location.reload(), 1800);
-        } catch (err: any) {
-            setCaseMsg({ type: 'error', text: err.message || 'Failed to submit.' });
-        } finally { setCaseLoading(false); }
+
+            if (res.status === 'success') {
+                setFlash({ type: 'ok', msg: res.message });
+                setShowModal(false);
+                setNewCase({ title: '', description: '', requested_amount: '' });
+                loadWelfareData();
+            } else {
+                setFlash({ type: 'err', msg: res.message });
+            }
+        } catch (e: any) {
+            setFlash({ type: 'err', msg: e.message });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
-    if (loading) return (
-        <div className="wf-loading">
-            <div className="wf-spinner"></div>
-            <p>Loading welfare data...</p>
-        </div>
-    );
+    if (loading || !data) return <div className="p-10 text-center">Loading Welfare Hub...</div>;
 
-    if (error) return (
-        <div className="wf-error-banner">
-            <i className="bi bi-exclamation-triangle-fill"></i> {error}
-        </div>
-    );
-
-    const { welfare_pool = 0, total_given = 0, total_received = 0, net_standing = 0,
-        withdrawable = 0, contributions = [], support_received = [], member_cases = [], community_cases = [] } = data || {};
-
-    const isContributor = net_standing >= 0;
+    const netImpact = data.totalGiven - data.totalReceived;
+    const standing = netImpact >= 0 ? 'Contributor' : 'Beneficiary';
 
     return (
-        <div className="wf-page">
-            {/* ── HERO ── */}
-            <div className="wf-hero">
-                <div className="wf-hero-mesh"></div>
-                <div className="wf-hero-dots"></div>
-                <div className="wf-hero-ring r1"></div>
-                <div className="wf-hero-ring r2"></div>
-                <div className="wf-hero-inner">
-                    <div className="wf-hero-nav">
-                        <Link href="/member/dashboard" className="wf-back">
-                            <i className="bi bi-arrow-left"></i> Dashboard
-                        </Link>
-                        <span className="wf-brand-tag">UMOJA SACCO</span>
-                    </div>
-
-                    <div className="wf-hero-grid">
-                        <div>
-                            <div className="wf-eyebrow"><div className="wf-ey-line"></div>Welfare Fund</div>
-                            <div className="wf-hero-lbl">Global Solidarity Pool</div>
-                            <div className="wf-hero-amount">
-                                <span className="wf-cur">KES</span>
-                                {Number(welfare_pool).toLocaleString('en-KE', { minimumFractionDigits: 2 })}
-                            </div>
-                            <div className={`wf-pill ${isContributor ? 'green' : 'rose'}`}>
-                                <span className="wf-pill-dot" style={{ background: isContributor ? '#a3e635' : '#f43f5e' }}></span>
-                                Community {isContributor ? 'Contributor' : 'Beneficiary'} · {net_standing >= 0 ? '+' : ''}{kf(net_standing)} net
-                            </div>
-                            <div className="wf-hero-ctas">
-                                <Link href="/member/mpesa?type=welfare" className="wf-btn-lime">
-                                    <i className="bi bi-heart-fill"></i> Contribute
-                                </Link>
-                                <button className="wf-btn-ghost" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.showModal()}>
-                                    <i className="bi bi-plus-circle"></i> Report Case
-                                </button>
-                                {withdrawable > 0 && (
-                                    <Link href="/member/withdraw?type=welfare" className="wf-btn-ghost-red">
-                                        <i className="bi bi-wallet2"></i> Withdraw Benefit
-                                    </Link>
-                                )}
-                            </div>
+        <div className="dash">
+            {/* HERO */}
+            <div className="welfare-hero">
+                <div className="hero-mesh"></div>
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-6">
+                            <i className="bi bi-heart-pulse-fill text-lime text-3xl animate-pulse"></i>
+                            <div className="text-[10px] font-black text-lime uppercase tracking-widest px-3 py-1 bg-lime/10 border border-lime/20 rounded-full">Solidarity Fund</div>
                         </div>
-
-                        <div className="wf-pool-block">
-                            <div className="wf-pool-lbl">Your Standing</div>
-                            <div className="wf-pool-rows">
-                                <div className="wf-pool-item">
-                                    <div className="wf-pool-ico green"><i className="bi bi-heart-fill"></i></div>
-                                    <div>
-                                        <div className="wf-pool-val">{kf(total_given)}</div>
-                                        <div className="wf-pool-sub">Total Contributed</div>
-                                    </div>
+                        <h1 className="text-4xl font-black tracking-tighter mb-2">Global Welfare Pool</h1>
+                        <p className="text-white/40 text-sm font-semibold max-w-md">Community-driven support system for bereavement, health emergencies, and shared prosperity.</p>
+                        
+                        <div className="hero-stats">
+                            <div className="hero-stat-item">
+                                <div className="hs-lbl">Current Pool Balance</div>
+                                <div className="hs-val">KES {parseFloat(data.poolBalance).toLocaleString()}</div>
+                            </div>
+                            <div className="hero-stat-item border-lime/20">
+                                <div className="hs-lbl">Your Net Standing</div>
+                                <div className={`hs-val ${netImpact >= 0 ? 'text-lime' : 'text-red-400'}`}>
+                                    {netImpact >= 0 ? '+' : ''}KES {netImpact.toLocaleString()}
                                 </div>
-                                <div className="wf-pool-item">
-                                    <div className="wf-pool-ico red"><i className="bi bi-arrow-down-left-circle-fill"></i></div>
-                                    <div>
-                                        <div className="wf-pool-val">{kf(total_received)}</div>
-                                        <div className="wf-pool-sub">Support Received</div>
-                                    </div>
-                                </div>
-                                {withdrawable > 0 && (
-                                    <div className="wf-pool-item">
-                                        <div className="wf-pool-ico amber"><i className="bi bi-wallet2"></i></div>
-                                        <div>
-                                            <div className="wf-pool-val">{kf(withdrawable)}</div>
-                                            <div className="wf-pool-sub">Withdrawable Benefit</div>
-                                        </div>
-                                    </div>
-                                )}
+                                <div className="text-[10px] font-bold text-white/30 uppercase mt-1 tracking-widest">{standing} Status</div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* ── FLOATING STAT CARDS ── */}
-            <div className="wf-stats-float">
-                <div className="wf-stats-grid">
-                    <div className="wsc sc-g">
-                        <div className="wsc-ico" style={{ background: 'rgba(22,163,74,.08)', color: '#16a34a' }}><i className="bi bi-heart-fill"></i></div>
-                        <div className="wsc-lbl">My Contributions</div>
-                        <div className="wsc-val">{kf(total_given)}</div>
-                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#16a34a', width: '100%' }}></div></div>
-                        <div className="wsc-meta">Lifetime welfare contributions</div>
-                    </div>
-                    <div className="wsc sc-r">
-                        <div className="wsc-ico" style={{ background: 'rgba(220,38,38,.08)', color: '#dc2626' }}><i className="bi bi-arrow-down-left-square-fill"></i></div>
-                        <div className="wsc-lbl">Support Received</div>
-                        <div className="wsc-val">{kf(total_received)}</div>
-                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#dc2626', width: `${total_given > 0 ? Math.min(100, (total_received / total_given) * 100) : 0}%` }}></div></div>
-                        <div className="wsc-meta">Total support disbursed to you</div>
-                    </div>
-                    <div className={`wsc ${isContributor ? 'sc-l' : 'sc-r'}`}>
-                        <div className="wsc-ico" style={{ background: isContributor ? 'rgba(163,230,53,.14)' : 'rgba(220,38,38,.08)', color: isContributor ? '#5a8a1a' : '#dc2626' }}>
-                            <i className="bi bi-scale"></i>
-                        </div>
-                        <div className="wsc-lbl">Net Impact</div>
-                        <div className="wsc-val" style={{ color: isContributor ? '#16a34a' : '#dc2626' }}>
-                            {net_standing >= 0 ? '+' : ''}{kf(net_standing)}
-                        </div>
-                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: isContributor ? '#a3e635' : '#dc2626', width: `${Math.min(100, Math.abs(net_standing / (total_given || 1)) * 100)}%` }}></div></div>
-                        <div className="wsc-meta">Community {isContributor ? 'Contributor' : 'Beneficiary'} status</div>
-                    </div>
-                    <div className="wsc sc-a">
-                        <div className="wsc-ico" style={{ background: 'rgba(217,119,6,.08)', color: '#d97706' }}><i className="bi bi-wallet2"></i></div>
-                        <div className="wsc-lbl">Withdrawable</div>
-                        <div className="wsc-val">{kf(withdrawable)}</div>
-                        <div className="wsc-bar"><div className="wsc-fill" style={{ background: '#d97706', width: withdrawable > 0 ? '80%' : '0%' }}></div></div>
-                        <div className="wsc-meta">Available for withdrawal now</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── BODY ── */}
-            <div className="wf-body">
-                {/* Chart + Policy */}
-                <div className="wf-chart-row">
-                    <div className="wf-chart-card">
-                        <div className="wf-cc-head">
-                            <span className="wf-cc-title">Contribution Trend</span>
-                            <span className="wf-cc-badge"><i className="bi bi-activity"></i> Lifetime</span>
-                        </div>
-                        <div className="wf-chart-wrap">
-                            <canvas ref={chartRef}></canvas>
-                        </div>
-                    </div>
-                    <div className="wf-policy-card">
-                        <div className="wf-policy-inner">
-                            <div className="wf-policy-title">Welfare Policy</div>
-                            <p className="wf-policy-desc">Contributions assist members during bereavement and hospitalization. Active membership status is required to be eligible for support.</p>
-                            <div className="wf-policy-items">
-                                {['Bereavement Support', 'Medical Emergency', 'Community Fundraisers'].map(item => (
-                                    <div key={item} className="wf-policy-item">
-                                        <div className="wf-policy-check"><i className="bi bi-check-lg"></i></div>
-                                        <span>{item}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tab Card */}
-                <div className="wf-tab-card">
-                    <div className="wf-tab-head">
-                        <div className="wf-tab-pills">
-                            {(['contributions', 'community', 'received', 'cases'] as const).map(tab => (
-                                <button key={tab} className={`wf-tpill ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-                                    {{ contributions: 'Contributions', community: 'Community', received: 'Support Received', cases: 'My Cases' }[tab]}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ── Contributions Tab ── */}
-                    {activeTab === 'contributions' && (
-                        <div className="wf-table-wrap">
-                            {contributions.length === 0 ? (
-                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-heart"></i></div><div className="wf-empty-title">No Contributions Yet</div><div className="wf-empty-sub">Your welfare contributions will appear here.</div></div>
-                            ) : (
-                                <table className="wf-table">
-                                    <thead><tr><th>Date</th><th>Reference</th><th>Type</th><th>Status</th><th className="text-right">Amount</th></tr></thead>
-                                    <tbody>
-                                        {contributions.map((c: any, i: number) => (
-                                            <tr key={i}>
-                                                <td>
-                                                    <div className="wf-cell-date">{new Date(c.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                                    <div className="wf-cell-time">{new Date(c.created_at).toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}</div>
-                                                </td>
-                                                <td><span className="wf-ref">{c.reference_no || 'N/A'}</span></td>
-                                                <td className="wf-cell-type">Welfare Contribution</td>
-                                                <td><span className={`wf-chip ${CHIP[c.status?.toLowerCase()] || 'chip-grey'}`}>{c.status}</span></td>
-                                                <td className="text-right"><span className="wf-amt-in">+ {kf(c.amount)}</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ── Community Tab ── */}
-                    {activeTab === 'community' && (
-                        <div className="wf-community-grid">
-                            {community_cases.length === 0 ? (
-                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-emoji-smile"></i></div><div className="wf-empty-title">All Clear</div><div className="wf-empty-sub">No active community situations. The SACCO is doing well!</div></div>
-                            ) : community_cases.map((c: any, i: number) => {
-                                const target = parseFloat(c.target_amount || c.requested_amount || 0);
-                                const raised = parseFloat(c.total_raised || 0);
-                                const pct = target > 0 ? Math.min(100, (raised / target) * 100) : 0;
-                                const stKey = c.status?.toLowerCase();
-                                return (
-                                    <div key={i} className="wf-case-card">
-                                        <div className="wf-case-top">
-                                            <div className="wf-case-meta">
-                                                <span className="wf-case-id">Case #{c.case_id}</span>
-                                                <span className={`wf-case-chip cs-${stKey}`}>{c.status}</span>
-                                            </div>
-                                            <div className="wf-case-title">{c.title}</div>
-                                        </div>
-                                        <div className="wf-case-body">
-                                            <p className="wf-case-desc">{c.description}</p>
-                                            <div className="wf-case-prog-row">
-                                                <span className="wf-case-raised">{kf(raised)}</span>
-                                                <span className="wf-case-target">Target: {kf(target)}</span>
-                                            </div>
-                                            <div className="wf-case-prog-track"><div className="wf-case-prog-fill" style={{ width: `${pct}%` }}></div></div>
-                                            <div className="wf-case-footer">
-                                                <span className="wf-donors"><i className="bi bi-people"></i> {c.donor_count ?? 0} donors</span>
-                                                <Link href={`/member/mpesa?type=welfare_case&case_id=${c.case_id}`} className="wf-btn-support">
-                                                    <i className="bi bi-heart-fill"></i> Support
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* ── Support Received Tab ── */}
-                    {activeTab === 'received' && (
-                        <div className="wf-table-wrap">
-                            {support_received.length === 0 ? (
-                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-inbox"></i></div><div className="wf-empty-title">No Support Records</div><div className="wf-empty-sub">No welfare support has been disbursed to your account yet.</div></div>
-                            ) : (
-                                <table className="wf-table">
-                                    <thead><tr><th>Date</th><th>Reason</th><th>Approved By</th><th>Status</th><th className="text-right">Amount</th></tr></thead>
-                                    <tbody>
-                                        {support_received.map((s: any, i: number) => (
-                                            <tr key={i}>
-                                                <td><div className="wf-cell-date">{new Date(s.date_granted).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div></td>
-                                                <td><div className="wf-cell-title">{s.reason || 'Welfare Support'}</div></td>
-                                                <td className="wf-cell-by">SACCO Admin</td>
-                                                <td><span className={`wf-chip ${CHIP[s.status?.toLowerCase()] || 'chip-grey'}`}>{s.status}</span></td>
-                                                <td className="text-right"><span className="wf-amt-out">− {kf(s.amount)}</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ── My Cases Tab ── */}
-                    {activeTab === 'cases' && (
-                        <div className="wf-table-wrap">
-                            {member_cases.length === 0 ? (
-                                <div className="wf-empty"><div className="wf-empty-ico"><i className="bi bi-folder2-open"></i></div><div className="wf-empty-title">No Cases Found</div><div className="wf-empty-sub">No welfare cases are associated with your account.</div></div>
-                            ) : (
-                                <table className="wf-table">
-                                    <thead><tr><th>Date</th><th>Title</th><th>Description</th><th>Status</th><th className="text-right">Approved Amount</th></tr></thead>
-                                    <tbody>
-                                        {member_cases.map((c: any, i: number) => (
-                                            <tr key={i}>
-                                                <td><div className="wf-cell-date">{new Date(c.created_at).toLocaleDateString('en-KE', { day: '2-digit', month: 'short', year: 'numeric' })}</div></td>
-                                                <td><div className="wf-cell-title">{c.title}</div></td>
-                                                <td><div className="wf-cell-desc">{c.description}</div></td>
-                                                <td><span className={`wf-chip ${CHIP[c.status?.toLowerCase()] || 'chip-grey'}`}>{c.status}</span></td>
-                                                <td className="text-right"><span className="wf-amt-neu">{kf(c.approved_amount || 0)}</span></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* ── REPORT CASE MODAL ── */}
-            <dialog id="caseModal" className="wf-modal">
-                <div className="wf-modal-inner">
-                    <div className="wf-modal-head">
-                        <div>
-                            <div className="wf-modal-title"><i className="bi bi-plus-circle-fill" style={{ color: '#16a34a' }}></i> Report Welfare Situation</div>
-                            <div className="wf-modal-sub">Describe the situation to request community support.</div>
-                        </div>
-                        <button className="wf-modal-close" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.close()}>
-                            <i className="bi bi-x-lg"></i>
-                        </button>
-                    </div>
-                    {caseMsg && (
-                        <div className={`wf-modal-msg ${caseMsg.type === 'success' ? 'msg-ok' : 'msg-err'}`}>
-                            <i className={`bi ${caseMsg.type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'}`}></i>
-                            {caseMsg.text}
-                        </div>
-                    )}
-                    <form onSubmit={handleCaseSubmit} className="wf-modal-body">
-                        <div className="wf-mf">
-                            <label className="wf-ml">Case Title</label>
-                            <input className="wf-mi" required placeholder="e.g. Bereavement — John Doe" value={caseForm.title} onChange={e => setCaseForm(p => ({ ...p, title: e.target.value }))} />
-                        </div>
-                        <div className="wf-mf">
-                            <label className="wf-ml">Description</label>
-                            <textarea className="wf-mt" rows={3} placeholder="Briefly describe the welfare situation..." value={caseForm.description} onChange={e => setCaseForm(p => ({ ...p, description: e.target.value }))}></textarea>
-                        </div>
-                        <div className="wf-mf">
-                            <label className="wf-ml">Requested Amount (KES)</label>
-                            <input type="number" className="wf-mi" required min={100} placeholder="0" value={caseForm.requested_amount} onChange={e => setCaseForm(p => ({ ...p, requested_amount: e.target.value }))} />
-                        </div>
-                        <div className="wf-modal-actions">
-                            <button type="button" className="wf-btn-cancel" onClick={() => (document.getElementById('caseModal') as HTMLDialogElement)?.close()}>Cancel</button>
-                            <button type="submit" className="wf-btn-submit" disabled={caseLoading}>
-                                {caseLoading ? 'Submitting...' : <><i className="bi bi-send-fill"></i> Submit Case</>}
+                        <div className="flex gap-4 mt-10">
+                            <Link href="/member/mpesa_request?type=welfare" className="px-8 py-3 bg-lime text-f rounded-full font-black text-sm no-underline transition-all hover:scale-105 hover:shadow-xl hover:shadow-lime/20">
+                                <i className="bi bi-heart-fill mr-2"></i> Contribute
+                            </Link>
+                            <button onClick={() => setShowModal(true)} className="px-8 py-3 bg-white/10 text-white border border-white/10 rounded-full font-black text-sm transition-all hover:bg-white/20">
+                                <i className="bi bi-plus-circle mr-2"></i> Report Situation
                             </button>
                         </div>
-                    </form>
+                    </div>
+
+                    {data.withdrawableBenefit > 0 && (
+                        <div className="bg-white/5 border border-white/10 p-6 rounded-3xl backdrop-blur-md animate-in fade-in slide-in-from-right-4">
+                            <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-4">Available Benefit</div>
+                            <div className="text-3xl font-black text-lime mb-6">KES {data.withdrawableBenefit.toLocaleString()}</div>
+                            <Link href="/member/withdraw?type=welfare" className="w-full py-3 bg-red-500/20 hover:bg-red-500/40 text-red-300 rounded-2xl font-black text-xs no-underline flex items-center justify-center border border-red-500/30 transition-all">
+                                <i className="bi bi-wallet2 mr-2"></i> Withdraw Benefit
+                            </Link>
+                        </div>
+                    )}
                 </div>
-            </dialog>
+            </div>
+
+            {/* FLASH */}
+            {flash && (
+                <div className={`mb-8 p-4 rounded-2xl flex items-start gap-4 ${flash.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} border border-current/10 animate-in fade-in slide-in-from-top-2`}>
+                    <i className={`bi bi-${flash.type === 'ok' ? 'check-circle-fill' : 'exclamation-triangle-fill'} text-xl`}></i>
+                    <div className="text-sm font-bold">{flash.msg}</div>
+                    <button className="ml-auto text-xl leading-none" onClick={() => setFlash(null)}>&times;</button>
+                </div>
+            )}
+
+            {/* CONTENT TABS */}
+            <div className="tab-pills mx-auto mb-10">
+                <button className={`tab-pill ${activeTab === 'contributions' ? 'active' : ''}`} onClick={() => setActiveTab('contributions')}>Contributions</button>
+                <button className={`tab-pill ${activeTab === 'community' ? 'active' : ''}`} onClick={() => setActiveTab('community')}>Community Cases</button>
+                <button className={`tab-pill ${activeTab === 'received' ? 'active' : ''}`} onClick={() => setActiveTab('received')}>Support History</button>
+                <button className={`tab-pill ${activeTab === 'mycases' ? 'active' : ''}`} onClick={() => setActiveTab('mycases')}>My Submissions</button>
+            </div>
+
+            <div className="welfare-card p-1">
+                {activeTab === 'contributions' && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-bg text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-bdr">
+                                <tr>
+                                    <th className="px-8 py-5">Date</th>
+                                    <th className="px-8 py-5">Reference</th>
+                                    <th className="px-8 py-5">Status</th>
+                                    <th className="px-8 py-5 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.allContribs.map((row: any, i: number) => (
+                                    <tr key={i} className="border-b border-bdr2 hover:bg-surf2 transition-colors">
+                                        <td className="px-8 py-5 font-bold text-sm text-t1">{new Date(row.created_at).toLocaleDateString()}</td>
+                                        <td className="px-8 py-5"><span className="text-[10px] font-bold bg-bg border border-bdr px-2 py-1 rounded-md text-fs font-mono">{row.reference_no}</span></td>
+                                        <td className="px-8 py-5">
+                                            <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter ${row.status === 'completed' || row.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                {row.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-right font-black text-fs">KES {parseFloat(row.amount).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                {data.allContribs.length === 0 && (
+                                    <tr><td colSpan={4} className="px-8 py-20 text-center font-bold text-gray-400 italic">No welfare contributions recorded yet.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {activeTab === 'community' && (
+                    <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {data.communityCases.map((crow: any) => {
+                            const pct = (parseFloat(crow.total_raised) / parseFloat(crow.requested_amount)) * 100;
+                            return (
+                                <div key={crow.case_id} className="case-card flex flex-col h-full animate-in zoom-in-95">
+                                    <div className="case-card-header mb-4">
+                                        <div>
+                                            <div className="case-id">Case #{crow.case_id}</div>
+                                            <h3 className="case-title">{crow.title}</h3>
+                                        </div>
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${crow.status === 'funded' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-lime text-f border-lime'}`}>
+                                            {crow.status}
+                                        </span>
+                                    </div>
+                                    <p className="case-desc flex-1">{crow.description}</p>
+                                    <div className="mt-6">
+                                        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
+                                            <span className="text-fs">KES {parseFloat(crow.total_raised).toLocaleString()} raised</span>
+                                            <span className="text-gray-400">Target: {parseFloat(crow.requested_amount).toLocaleString()}</span>
+                                        </div>
+                                        <div className="case-progress mb-6">
+                                            <div className="case-progress-bar shadow-[0_0_12px_rgba(163,230,53,0.5)]" style={{ width: `${Math.min(100, pct)}%` }}></div>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                <i className="bi bi-people-fill text-fs text-sm"></i>
+                                                {crow.donor_count} Supporters
+                                            </div>
+                                            <Link href={`/member/mpesa_request?type=welfare_case&case_id=${crow.case_id}`} className="px-5 py-2.5 bg-lime text-f rounded-full font-black text-[10px] no-underline transition-all hover:scale-105 active:scale-95 uppercase tracking-widest">
+                                                <i className="bi bi-heart-fill mr-1"></i> Support
+                                            </Link>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {data.communityCases.length === 0 && (
+                            <div className="col-span-full py-20 text-center font-bold text-gray-400 italic">No community situations requiring active support.</div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'received' && (
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-bg text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-bdr">
+                                <tr>
+                                    <th className="px-8 py-5">Date</th>
+                                    <th className="px-8 py-5">Situation Reason</th>
+                                    <th className="px-8 py-5">Status</th>
+                                    <th className="px-8 py-5 text-right">Benefit Received</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.supportHistory.map((row: any, i: number) => (
+                                    <tr key={i} className="border-b border-bdr2 hover:bg-surf2 transition-colors">
+                                        <td className="px-8 py-5 font-bold text-sm text-t1">{new Date(row.date_granted).toLocaleDateString()}</td>
+                                        <td className="px-8 py-5 font-bold text-sm text-t1">{row.reason}</td>
+                                        <td className="px-8 py-5">
+                                            <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter ${row.status === 'disbursed' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                {row.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-right font-black text-red-500">− KES {parseFloat(row.amount).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                {data.supportHistory.length === 0 && (
+                                    <tr><td colSpan={4} className="px-8 py-20 text-center font-bold text-gray-400 italic">No welfare support has been disbursed to you yet.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {activeTab === 'mycases' && (
+                     <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-bg text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-bdr">
+                                <tr>
+                                    <th className="px-8 py-5">Submitted</th>
+                                    <th className="px-8 py-5">Title</th>
+                                    <th className="px-8 py-5">Status</th>
+                                    <th className="px-8 py-5 text-right">Requested</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.myCases.map((row: any, i: number) => (
+                                    <tr key={i} className="border-b border-bdr2 hover:bg-surf2 transition-colors">
+                                        <td className="px-8 py-5 font-bold text-sm text-t1">{new Date(row.created_at).toLocaleDateString()}</td>
+                                        <td className="px-8 py-5 font-bold text-sm text-t1">{row.title}</td>
+                                        <td className="px-8 py-5">
+                                            <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter ${row.status === 'approved' || row.status === 'funded' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                {row.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-right font-black text-t1">KES {parseFloat(row.requested_amount).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                {data.myCases.length === 0 && (
+                                    <tr><td colSpan={4} className="px-8 py-20 text-center font-bold text-gray-400 italic">You have not submitted any welfare cases.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* MODAL */}
+            {showModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-f/80 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
+                    <div className="relative bg-white w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="p-8">
+                            <div className="flex justify-between items-start mb-8">
+                                <div>
+                                    <h3 className="text-2xl font-black text-t1 tracking-tighter">Report Situation</h3>
+                                    <p className="text-sm font-semibold text-gray-400">Request welfare support for a specific occurrence.</p>
+                                </div>
+                                <button onClick={() => setShowModal(false)} className="w-10 h-10 bg-bg text-t3 rounded-full flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors">
+                                    <i className="bi bi-x-lg text-sm"></i>
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleReportCase} className="space-y-6">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Title of Case</label>
+                                    <div className="px-5 py-4 bg-bg border border-bdr rounded-2xl flex items-center gap-4 transition-all focus-within:border-fs focus-within:bg-white focus-within:shadow-md">
+                                        <i className="bi bi-tag text-t3"></i>
+                                        <input 
+                                            type="text" className="bg-transparent border-none outline-none font-bold text-t1 w-full" 
+                                            placeholder="e.g. Bereavement Support" value={newCase.title} onChange={e => setNewCase({...newCase, title: e.target.value})} required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Detailed Description</label>
+                                    <textarea 
+                                        className="w-full px-5 py-4 bg-bg border border-bdr rounded-2xl font-bold text-t1 focus:bg-white focus:border-fs focus:shadow-md transition-all outline-none min-h-[100px]"
+                                        placeholder="Explain the situation in details..." value={newCase.description} onChange={e => setNewCase({...newCase, description: e.target.value})} required
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Target Amount (KES)</label>
+                                    <p className="text-[9px] font-bold text-gray-400 italic mb-2">Amount you are requesting from the community fund pool.</p>
+                                    <div className="px-5 py-4 bg-bg border border-bdr rounded-2xl flex items-center gap-4 transition-all focus-within:border-fs focus-within:bg-white focus-within:shadow-md">
+                                        <span className="font-black text-fs">KES</span>
+                                        <input 
+                                            type="number" className="bg-transparent border-none outline-none font-black text-t1 w-full text-xl" 
+                                            placeholder="0.00" value={newCase.requested_amount} onChange={e => setNewCase({...newCase, requested_amount: e.target.value})} required
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" className="w-full py-5 bg-f text-white rounded-2xl font-black text-lg transition-all shadow-xl hover:shadow-f/30 flex items-center justify-center gap-3 disabled:opacity-50" disabled={submitting}>
+                                    {submitting ? <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></span> : (
+                                        <>
+                                            <i className="bi bi-send-fill text-lime"></i>
+                                            <span>SUBMIT REQUEST</span>
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

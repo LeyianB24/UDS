@@ -1,255 +1,195 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Wallet, 
-  PiggyBank, 
-  Banknote, 
-  PieChart, 
-  HeartPulse, 
-  ArrowLeft, 
-  Smartphone, 
-  ShieldCheck, 
-  CheckCircle, 
-  AlertCircle,
-  HelpCircle,
-  ArrowRightLeft,
-  ChevronRight,
-  TrendingDown
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import './withdraw.css';
 
-interface WithdrawalSource {
-  title: string;
-  balance: number;
-  min: number;
-  note?: string;
-  is_exit?: boolean;
-}
+export default function WithdrawPage() {
+    const [data, setData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [selectedType, setSelectedType] = useState('wallet');
+    const [amount, setAmount] = useState('');
+    const [phone, setPhone] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [flash, setFlash] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
-export default function WithdrawalPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const type = searchParams.get('type') || 'wallet';
-  const sourcePage = searchParams.get('source') || 'dashboard';
+    const loadBalances = useCallback(async () => {
+        try {
+            const res = await apiFetch('/api/member/withdraw');
+            if (res.status === 'success') {
+                setData(res.data);
+                setPhone(res.data.phone);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  const [data, setData] = useState<{ source: WithdrawalSource; phone: string; type: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [amount, setAmount] = useState('');
-  const [phone, setPhone] = useState('');
-  const [processing, setProcessing] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
+    useEffect(() => {
+        loadBalances();
+    }, [loadBalances]);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const res = await apiFetch(`/api/v1/withdraw.php?type=${type}`);
-    if (res.status === 'success') {
-      setData(res.data);
-      setPhone(res.data.phone);
-    }
-    setLoading(false);
-  }, [type]);
+    const handleWithdraw = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        setFlash(null);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+        try {
+            const res = await apiFetch('/api/member/withdraw', {
+                method: 'POST',
+                body: JSON.stringify({
+                    amount: parseFloat(amount),
+                    phone,
+                    type: selectedType
+                })
+            });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setProcessing(true);
-    
-    const formData = new FormData();
-    formData.append('amount', amount);
-    formData.append('phone', phone);
-    formData.append('type', type);
-    
-    const res = await apiFetch('/api/v1/withdraw.php', { 
-      method: 'POST', 
-      body: formData 
-    });
+            if (res.status === 'success') {
+                setFlash({ type: 'ok', msg: res.message });
+                setAmount('');
+                loadBalances();
+            } else {
+                setFlash({ type: 'err', msg: res.message });
+            }
+        } catch (e: any) {
+            setFlash({ type: 'err', msg: e.message });
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-    if (res.status === 'success') {
-      setStatus('success');
-      setMessage(res.message);
-      setTimeout(() => {
-        router.push(`/member/${sourcePage}`);
-      }, 3000);
-    } else {
-      setStatus('error');
-      setMessage(res.message);
-    }
-    setProcessing(false);
-  };
+    if (loading || !data) return <div className="p-10 text-center">Loading balances...</div>;
 
-  if (loading && !data) return (
-    <div className="flex flex-col items-center justify-center h-[60vh]">
-       <div className="w-12 h-12 border-4 border-[#0b2419] border-t-lime-400 rounded-full animate-spin mb-4" />
-       <p className="text-[#0b2419]/40 text-[11px] font-black uppercase tracking-[2px]">Calculating Liquidity...</p>
-    </div>
-  );
+    const sources = [
+        { id: 'wallet', title: 'Wallet Balance', desc: 'Liquid funds available for transfer', icon: 'wallet2' },
+        { id: 'savings', title: 'Savings Account', desc: 'Earned interest (Min. bal KES 500)', icon: 'piggy-bank' },
+        { id: 'loans', title: 'Appoved Loan Funds', desc: 'Disbursed funds ready for payout', icon: 'cash-stack' },
+        { id: 'shares', title: 'Share Capital', desc: 'SACCO Exit Request (Admin review)', icon: 'pie-chart' },
+        { id: 'welfare', title: 'Welfare Benefit', desc: 'Approved welfare claims', icon: 'heart-pulse' }
+    ];
 
-  const source = data!.source;
-  const isExit = source.is_exit || type === 'shares';
+    const currentBal = data.balances[selectedType] || 0;
+    const maxWithdraw = selectedType === 'savings' ? Math.max(0, currentBal - 500) : currentBal;
 
-  const icons: Record<string, any> = {
-    wallet: Wallet,
-    savings: PiggyBank,
-    loans: Banknote,
-    shares: PieChart,
-    welfare: HeartPulse
-  };
-
-  const Icon = icons[type] || Wallet;
-
-  return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 -mt-10">
-      
-      <div className="w-full max-w-xl">
-        <Link href={`/member/${sourcePage}`} className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0b2419] transition-all mb-8">
-           <ArrowLeft size={12} /> Back to {sourcePage}
-        </Link>
-
-        {/* Brand Header */}
-        <div className={cn(
-          "bg-[#0b2419] rounded-[40px] overflow-hidden p-10 text-white shadow-2xl relative mb-8",
-          isExit ? "bg-red-950" : "bg-[#0b2419]"
-        )}>
-           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_-10%,rgba(168,224,99,0.1)_0%,transparent_55%)]" />
-           <div className="relative z-10">
-              <div className="flex items-center gap-4 mb-8">
-                 <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", isExit ? "bg-white/10 text-red-400" : "bg-lime-400/10 text-lime-400")}>
-                    <Icon size={32} />
-                 </div>
-                 <div>
-                    <h1 className="text-3xl font-black tracking-tight leading-none mb-1">{isExit ? "SACCO Exit" : "Quick Withdrawal"}</h1>
-                    <p className="text-white/40 text-[10px] font-black uppercase tracking-[3px]">{source.title}</p>
-                 </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center group transition-all hover:bg-white/10">
-                 <p className="text-[10px] font-black uppercase tracking-[2px] text-white/30 mb-2">Available Balance</p>
-                 <h2 className="text-5xl font-black tracking-tighter">KES {source.balance.toLocaleString()}</h2>
-                 {source.note && (
-                   <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-full text-[9px] font-black uppercase">
-                      <HelpCircle size={12} /> {source.note}
-                   </div>
-                 )}
-              </div>
-           </div>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-white border border-emerald-900/5 rounded-[40px] p-10 shadow-sm relative overflow-hidden">
-           {status === 'idle' ? (
-             <form onSubmit={handleSubmit} className="space-y-8">
-                
-                <div className="space-y-3">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Withdrawal Amount (KES)</label>
-                   <div className="relative group">
-                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-sm font-black text-slate-300">KES</span>
-                      <input 
-                        type="number" 
-                        placeholder="0.00"
-                        className="w-full h-16 bg-slate-50 border-none rounded-[24px] pl-16 pr-6 text-xl font-black focus:ring-2 focus:ring-[#0b2419]/5 transition-all text-[#0b2419]"
-                        value={amount}
-                        onChange={e => setAmount(e.target.value)}
-                        max={source.balance}
-                        min={source.min}
-                        required
-                      />
-                   </div>
-                   <div className="flex justify-between px-4 text-[9px] font-black uppercase tracking-widest text-slate-300">
-                      <span>Min: KES {source.min}</span>
-                      <span>Max: KES {source.balance.toLocaleString()}</span>
-                   </div>
+    return (
+        <div className="dash">
+            {/* HERO */}
+            <div className="withdraw-hero">
+                <div className="hero-mesh"></div>
+                <div className="flex align-items-center justify-between gap-3 flex-wrap">
+                    <div>
+                        <div className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">Financial Portal</div>
+                        <h1 className="text-2xl font-extrabold tracking-tight">Withdraw Funds</h1>
+                        <p className="text-white/40 text-sm mt-1">Select your source and transfer to M-Pesa immediately.</p>
+                    </div>
+                    <Link href="/member/dashboard" className="px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold transition-all no-underline text-white">
+                        <i className="bi bi-arrow-left mr-2"></i> Dashboard
+                    </Link>
                 </div>
-
-                <div className="space-y-3">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">M-Pesa Recipient Number</label>
-                   <div className="relative group">
-                      <Smartphone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#0b2419] transition-all" size={20} />
-                      <input 
-                        type="tel" 
-                        placeholder="2547..."
-                        className="w-full h-16 bg-slate-50 border-none rounded-[24px] pl-16 pr-6 text-sm font-black focus:ring-2 focus:ring-[#0b2419]/5 transition-all text-[#0b2419]"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        required
-                      />
-                   </div>
-                   <p className="px-4 text-[9px] font-black uppercase tracking-widest text-slate-300">Funds will be sent to this number instantly</p>
-                </div>
-
-                {isExit && (
-                  <div className="bg-red-50 border border-red-100 rounded-2xl p-6 flex gap-4">
-                     <AlertCircle className="text-red-500 shrink-0" size={20} />
-                     <p className="text-[10px] font-bold text-red-900/60 leading-relaxed uppercase tracking-wider">
-                        <strong>EXIT PROTOCOL:</strong> Withdrawing from your Share Capital initiated a Sacco Exit. This requires manual administrative review and will close your active membership.
-                     </p>
-                  </div>
-                )}
-
-                <button 
-                  type="submit"
-                  disabled={processing || !amount}
-                  className={cn(
-                    "w-full h-16 rounded-[24px] text-[11px] font-black uppercase tracking-[2px] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 disabled:grayscale disabled:opacity-50",
-                    isExit ? "bg-red-600 text-white shadow-red-900/10 hover:bg-black" : "bg-lime-400 text-[#0b2419] shadow-lime-400/20 hover:bg-white hover:border-2 hover:border-[#0b2419]"
-                  )}
-                >
-                   {processing ? "Securing Funds..." : isExit ? "Confirm SACCO Exit & Refund" : "Withdraw to M-Pesa"} 
-                   {isExit ? <TrendingDown size={18} /> : <ArrowRightLeft size={18} />}
-                </button>
-             </form>
-           ) : status === 'success' ? (
-             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                <div className="w-24 h-24 bg-emerald-50 text-emerald-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                   <CheckCircle size={48} />
-                </div>
-                <h3 className="text-2xl font-black text-[#0b2419] mb-4">Transaction Queued</h3>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs mx-auto mb-10">
-                  {message}. Redirecting you to your dashboard in a few seconds...
-                </p>
-                <Link href={`/member/${sourcePage}`} className="h-12 px-8 bg-slate-50 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-[#0b2419] transition-all">
-                   Go Back Now
-                </Link>
-             </motion.div>
-           ) : (
-             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-10">
-                <div className="w-24 h-24 bg-red-50 text-red-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-inner">
-                   <AlertCircle size={48} />
-                </div>
-                <h3 className="text-2xl font-black text-red-600 mb-4">Request Failed</h3>
-                <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs mx-auto mb-10">
-                  {message}
-                </p>
-                <button onClick={() => setStatus('idle')} className="h-12 px-8 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all">
-                   Try Again
-                </button>
-             </motion.div>
-           )}
-        </div>
-
-        {/* Security Footer */}
-        <div className="mt-12 flex items-center justify-center gap-8 opacity-30 grayscale">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
-               <ShieldCheck size={14} /> PCI Compliant
             </div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
-               <Smartphone size={14} /> 2FA Secured
-            </div>
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600">
-               <CheckCircle size={14} /> Real-Time Updates
+
+            {/* MESSAGE */}
+            {flash && (
+                <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${flash.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    <i className={`bi bi-${flash.type === 'ok' ? 'check-circle-fill' : 'exclamation-triangle-fill'} text-xl`}></i>
+                    <div className="text-sm font-bold">{flash.msg}</div>
+                    <button className="ml-auto text-xl leading-none" onClick={() => setFlash(null)}>&times;</button>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Left: Source Explorer */}
+                <div className="lg:col-span-5 space-y-3">
+                    <div className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest px-2 mb-2">Select Source Account</div>
+                    {sources.map(src => (
+                        <div key={src.id} className={`source-card ${selectedType === src.id ? 'active' : ''}`} onClick={() => setSelectedType(src.id)}>
+                            <div className="sc-ico"><i className={`bi bi-${src.icon}`}></i></div>
+                            <div className="sc-info">
+                                <div className="sc-title">{src.title}</div>
+                                <div className="text-[10px] text-gray-400 font-bold mb-1">{src.desc}</div>
+                                <div className="sc-bal">KES {data.balances[src.id]?.toLocaleString() || '0.00'}</div>
+                            </div>
+                            {selectedType === src.id && <i className="bi bi-check-circle-fill text-lime text-xl"></i>}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Right: Withdrawal Form */}
+                <div className="lg:col-span-7">
+                    <div className="withdraw-form">
+                        <form onSubmit={handleWithdraw}>
+                            <div className="mb-6">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Amount to Withdraw</label>
+                                    <span className="text-[10px] font-bold text-fs">Available: KES {maxWithdraw.toLocaleString()}</span>
+                                </div>
+                                <div className="input-group-lg">
+                                    <span className="currency">KES</span>
+                                    <input 
+                                        type="number" className="amount-input" placeholder="0.00" 
+                                        value={amount} onChange={e => setAmount(e.target.value)}
+                                        max={maxWithdraw} step="0.01" required
+                                    />
+                                </div>
+                                <div className="mt-2 flex justify-between">
+                                    <button type="button" className="text-[10px] font-bold text-gray-400 hover:text-fs" onClick={() => setAmount((maxWithdraw/4).toString())}>25%</button>
+                                    <button type="button" className="text-[10px] font-bold text-gray-400 hover:text-fs" onClick={() => setAmount((maxWithdraw/2).toString())}>50%</button>
+                                    <button type="button" className="text-[10px] font-bold text-gray-400 hover:text-fs" onClick={() => setAmount((maxWithdraw*0.75).toString())}>75%</button>
+                                    <button type="button" className="text-[10px] font-bold text-fs hover:underline" onClick={() => setAmount(maxWithdraw.toString())}>MAX</button>
+                                </div>
+                            </div>
+
+                            <div className="mb-8">
+                                <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-2">M-Pesa Phone Number</label>
+                                <div className="flex gap-2">
+                                    <div className="flex-1 px-4 py-3 bg-bg border border-bdr rounded-xl font-bold text-t1 flex items-center gap-3">
+                                        <i className="bi bi-phone text-fs"></i>
+                                        <input 
+                                            type="tel" className="bg-transparent border-none outline-none w-full" 
+                                            value={phone} onChange={e => setPhone(e.target.value)} required
+                                        />
+                                    </div>
+                                    <div className="p-3 bg-fs/5 text-fs rounded-xl flex items-center">
+                                        <i className="bi bi-shield-check-fill text-xl"></i>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-bold mt-2 italic px-1">Funds will be disbursed to this number immediately upon confirmation.</p>
+                            </div>
+
+                            {selectedType === 'shares' && (
+                                <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+                                    <i className="bi bi-exclamation-triangle-fill text-red-600 text-xl"></i>
+                                    <div>
+                                        <div className="text-red-700 font-extrabold text-sm mb-1 uppercase tracking-tight">Warning: SACCO Exit</div>
+                                        <div className="text-red-600/70 text-xs font-bold leading-relaxed">
+                                            Withdrawing shares implies your intention to exit the SACCO. This request requires manual approval & legal clearance from the administration.
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button type="submit" className={`btn-withdraw ${selectedType === 'shares' ? 'bg-red-600 text-white hover:bg-red-700' : 'lime'}`} disabled={submitting}>
+                                {submitting ? <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></span> : (
+                                    <>
+                                        <i className={`bi bi-${selectedType === 'shares' ? 'door-open-fill' : 'cash-coin'}`}></i>
+                                        {selectedType === 'shares' ? 'Confirm Exit & Request Refund' : 'Withdraw to M-Pesa'}
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+
+                    <div className="mt-6 flex items-center justify-between px-4">
+                        <Link href="/member/transactions" className="text-[10px] font-bold text-fs no-underline hover:underline flex items-center gap-2">
+                            <i className="bi bi-arrow-left-right"></i> View Transaction History
+                        </Link>
+                        <span className="text-[10px] font-bold text-gray-300 uppercase tracking-widest"><i className="bi bi-lock-fill mr-1"></i> AES-256 Encrypted</span>
+                    </div>
+                </div>
             </div>
         </div>
-      </div>
-
-    </div>
-  );
+    );
 }
