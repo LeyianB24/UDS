@@ -1,230 +1,233 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Bell, 
-  CheckCheck, 
-  Clock, 
-  AlertCircle, 
-  CheckCircle2, 
-  Info, 
-  ArrowLeft,
-  Search,
-  MoreVertical,
-  Trash2,
-  BellOff,
-  ChevronRight,
-  LucideIcon
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import './notifications.css';
 
-interface Notification {
-  notification_id: number;
-  type: string;
-  message: string;
-  is_read: boolean | number;
-  created_at: string;
-}
+const getNotificationStyle = (title: string, msg: string) => {
+    const t = (title + ' ' + msg).toLowerCase();
+    if (t.includes('loan') || t.includes('credit') || t.includes('pay'))
+        return { icon: 'bi-wallet2', bg: 'var(--grn-bg)', color: 'var(--grn)' };
+    if (t.includes('approv') || t.includes('success'))
+        return { icon: 'bi-check-circle-fill', bg: 'var(--grn-bg)', color: 'var(--grn)' };
+    if (t.includes('reject') || t.includes('fail') || t.includes('error'))
+        return { icon: 'bi-exclamation-triangle-fill', bg: 'var(--red-bg)', color: 'var(--red)' };
+    if (t.includes('warn'))
+        return { icon: 'bi-exclamation-circle-fill', bg: 'var(--amb-bg)', color: 'var(--amb)' };
+    if (t.includes('welfare') || t.includes('heart'))
+        return { icon: 'bi-heart-pulse-fill', bg: 'rgba(13,148,136,.08)', color: '#0d9488' };
+    return { icon: 'bi-bell-fill', bg: 'rgba(11,36,25,.06)', color: 'var(--t2)' };
+};
+
+const timeAgo = (datetime: string) => {
+    const diff = Math.floor((Date.now() - new Date(datetime).getTime()) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+    return new Date(datetime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+};
 
 export default function NotificationsPage() {
-  const [notifs, setNotifs] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showAllRead, setShowAllRead] = useState(false);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiFetch('/api/v1/member_notifications.php');
-      setNotifs(res.notifications);
-      setUnreadCount(res.unread_count);
-    } catch (e) {
-      console.error(e);
-    }
-    setLoading(false);
-  }, []);
+    const loadData = useCallback(async () => {
+        try {
+            const res = await apiFetch('/api/member/notifications');
+            if (res.status === 'success') {
+                setNotifications(res.data.notifications);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-  const markRead = async (id: number | 'all') => {
-    try {
-      const res = await apiFetch('/api/v1/member_notifications.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: id === 'all' ? 0 : id,
-          all: id === 'all'
-        })
-      });
-      loadData();
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    const markAllRead = async () => {
+        try {
+            // Optimistic update
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
+            await apiFetch('/api/member/notifications', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'mark_all_read' })
+            });
+        } catch (e) {
+            console.error(e);
+            loadData(); // Revert on failure
+        }
+    };
 
-  const getIcon = (type: string): LucideIcon => {
-    switch(type.toLowerCase()) {
-      case 'loan_approved': case 'payment_success': return CheckCircle2;
-      case 'loan_rejected': case 'payment_failed': return AlertCircle;
-      case 'withdrawal_request': return Clock;
-      default: return Info;
-    }
-  };
+    const unread = useMemo(() => notifications.filter(n => Number(n.is_read) === 0), [notifications]);
+    const read = useMemo(() => notifications.filter(n => Number(n.is_read) === 1), [notifications]);
+    const financeCount = useMemo(() => 
+        notifications.filter(n => (n.title + n.message).toLowerCase().match(/loan|pay|credit/i)).length
+    , [notifications]);
 
-  const filtered = notifs.filter(n => 
-    n.message.toLowerCase().includes(search.toLowerCase()) ||
-    n.type.toLowerCase().includes(search.toLowerCase())
-  );
-
-  if (loading && notifs.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-[60vh]">
-       <div className="w-12 h-12 border-4 border-[#0b2419] border-t-lime-400 rounded-full animate-spin mb-4" title="Loading Alerts" />
-       <p className="text-[#0b2419]/40 text-[11px] font-black uppercase tracking-[2px]">Syncing Alerts...</p>
-    </div>
-  );
-
-  return (
-    <div className="max-w-4xl mx-auto px-6 pb-20">
-      
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 mt-8">
-         <div>
-            <Link href="/member/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0b2419] transition-all mb-4">
-               <ArrowLeft size={12} /> Dashboard
-            </Link>
-            <h1 className="text-4xl font-black tracking-tighter text-[#0b2419] flex items-center gap-4">
-               Notifications
-               {unreadCount > 0 && (
-                 <span className="h-8 px-4 bg-lime-400 text-[#0b2419] rounded-full text-[11px] font-black flex items-center justify-center animate-bounce">
-                    {unreadCount} NEW
-                 </span>
-               )}
-            </h1>
-         </div>
-         <div className="flex items-center gap-3">
-            <div className="relative group flex-1 md:w-64">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#0b2419] transition-all" size={16} />
-               <input 
-                 type="text" 
-                 title="Search Notifications"
-                 placeholder="Search alerts..." 
-                 className="w-full h-12 bg-white border border-emerald-900/5 rounded-2xl pl-12 pr-4 text-xs font-black focus:ring-2 focus:ring-lime-400/20 transition-all"
-                 value={search}
-                 onChange={e => setSearch(e.target.value)}
-               />
+    if (loading && notifications.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a3e635]"></div>
             </div>
-            <button 
-              onClick={() => markRead('all')}
-              title="Mark All as Read"
-              className="h-12 px-6 bg-[#0b2419] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all shadow-lg active:scale-95 disabled:opacity-50"
-              disabled={unreadCount === 0}
-            >
-               <CheckCheck size={16} /> Clear All
-            </button>
-         </div>
-      </div>
+        );
+    }
 
-      {/* Notifications List */}
-      <div className="space-y-4">
-         <AnimatePresence mode="popLayout">
-            {filtered.map((n, idx) => {
-               const Icon = getIcon(n.type);
-               const isRead = n.is_read == 1 || n.is_read === true;
-               
-               return (
-                 <motion.div 
-                   key={n.notification_id}
-                   initial={{ opacity: 0, x: -20 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   transition={{ delay: idx * 0.05 }}
-                   onClick={() => !isRead && markRead(n.notification_id)}
-                   className={cn(
-                     "bg-white border rounded-[32px] p-6 flex items-start gap-6 transition-all group cursor-pointer relative overflow-hidden",
-                     isRead ? "border-emerald-900/5 opacity-60" : "border-lime-400/30 shadow-lg shadow-lime-900/5 scale-[1.02] z-10"
-                   )}
-                 >
-                    {!isRead && (
-                       <div className="absolute top-0 left-0 w-1.5 h-full bg-lime-400" />
+    return (
+        <div className="dash">
+            {/* HERO */}
+            <div className="notif-hero">
+                <div className="hero-mesh"></div>
+                <div className="hero-dots"></div>
+                <div className="hero-ring r1"></div>
+                <div className="hero-inner">
+                    <div>
+                        <div className="hero-eyebrow"><i className="bi bi-bell-fill mr-1"></i> Activity Feed</div>
+                        <h1>Notifications</h1>
+                        <p className="hero-sub opacity-70">Recent alerts and updates for your account</p>
+                    </div>
+                    <Link href="/member/dashboard" className="btn-back-hero">
+                        <i className="bi bi-arrow-left"></i> Dashboard
+                    </Link>
+                </div>
+            </div>
+
+            {/* STAT CARDS */}
+            <div className="stats-float">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="sc">
+                        <div className="sc-ico" style={{background:'var(--grn-bg)',color:'var(--grn)'}}><i className="bi bi-bell-fill"></i></div>
+                        <div className="sc-lbl">Total</div>
+                        <div className="sc-val">{notifications.length}</div>
+                        <div className="sc-meta">Notifications on record</div>
+                    </div>
+                    <div className="sc">
+                        <div className="sc-ico" style={{background: unread.length > 0 ? 'var(--red-bg)' : 'var(--grn-bg)', color: unread.length > 0 ? 'var(--red)' : 'var(--grn)' }}>
+                            <i className={`bi bi-bell-${unread.length > 0 ? 'exclamation-fill' : 'fill'}`}></i>
+                        </div>
+                        <div className="sc-lbl">Unread</div>
+                        <div className="sc-val" style={{color: unread.length > 0 ? 'var(--red)' : 'var(--grn)'}}>{unread.length}</div>
+                        <div className="sc-meta">{unread.length > 0 ? 'Awaiting your attention' : 'All caught up!'}</div>
+                    </div>
+                    <div className="sc">
+                        <div className="sc-ico" style={{background:'var(--lg)',color:'var(--lt)'}}><i className="bi bi-wallet2"></i></div>
+                        <div className="sc-lbl">Financial</div>
+                        <div className="sc-val">{financeCount}</div>
+                        <div className="sc-meta">Loan &amp; payment alerts</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* BODY */}
+            <div className="pg-body">
+                <div className="max-w-4xl mx-auto">
+                    {notifications.length === 0 ? (
+                        <div className="notif-shell">
+                            <div className="empty-well">
+                                <div className="ew-ico"><i className="bi bi-bell-slash"></i></div>
+                                <div className="ew-title">No Notifications Yet</div>
+                                <div className="ew-sub text-gray-500">You&apos;re all caught up! New alerts will appear here.</div>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* UNREAD */}
+                            {unread.length > 0 ? (
+                                <>
+                                    <div className="notif-section-label nsl-unread">
+                                        <i className="bi bi-circle-fill text-[5px]"></i> Unread ({unread.length})
+                                    </div>
+                                    <div className="notif-shell shell-unread">
+                                        <div className="ns-head">
+                                            <span className="ns-title text-[#dc2626]">
+                                                <i className="bi bi-bell-exclamation-fill"></i>
+                                                New Notifications
+                                                <span className="bg-[#dc2626]/10 text-[#dc2626] text-[9.5px] font-extrabold px-2 py-0.5 rounded-full ml-2">{unread.length} new</span>
+                                            </span>
+                                            <button className="btn-mark-all" onClick={markAllRead}>
+                                                <i className="bi bi-check2-all mr-1"></i> Mark all read
+                                            </button>
+                                        </div>
+                                        {unread.map((n, idx) => {
+                                            const s = getNotificationStyle(n.title, n.message);
+                                            return (
+                                                <div key={n.notification_id} className="notif-row unread">
+                                                    <div className="n-ico" style={{background: s.bg, color: s.color}}>
+                                                        <i className={`bi ${s.icon}`}></i>
+                                                    </div>
+                                                    <div className="n-body">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="n-title">{n.title}<span className="unread-dot"></span></div>
+                                                            <div className="n-time"><i className="bi bi-clock"></i>{timeAgo(n.created_at)}</div>
+                                                        </div>
+                                                        <div className="n-msg" dangerouslySetInnerHTML={{ __html: n.message.replace(/\n/g, '<br/>') }}></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-[#16a34a]/5 border border-[#16a34a]/20 rounded-xl p-4 mb-6 text-[#16a34a] text-sm font-bold animate-in fade-in slide-in-from-top-2 duration-500">
+                                    <i className="bi bi-check-circle-fill text-lg"></i>
+                                    You&apos;re all caught up! No unread notifications.
+                                </div>
+                            )}
+
+                            {/* READ */}
+                            {read.length > 0 && (
+                                <>
+                                    <div className="notif-section-label nsl-read mt-8">
+                                        <i className="bi bi-check2"></i> Previously Read ({read.length})
+                                    </div>
+                                    <div className="notif-shell">
+                                        <div className="ns-head">
+                                            <span className="ns-title text-gray-400">
+                                                <i className="bi bi-bell-fill"></i>
+                                                Read Notifications
+                                                <span className="bg-gray-100 dark:bg-white/5 text-gray-500 text-[9.5px] font-extrabold px-2 py-0.5 rounded-full ml-2">{read.length} items</span>
+                                            </span>
+                                            <button 
+                                                className="bg-gray-100 dark:bg-white/5 text-gray-500 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2"
+                                                onClick={() => setShowAllRead(!showAllRead)}
+                                            >
+                                                <i className={`bi bi-chevron-${showAllRead ? 'up' : 'down'}`}></i>
+                                                {showAllRead ? 'Show less' : 'Show all'}
+                                            </button>
+                                        </div>
+                                        {(showAllRead ? read : read.slice(0, 3)).map((n, idx) => {
+                                            const s = getNotificationStyle(n.title, n.message);
+                                            return (
+                                                <div key={n.notification_id} className="notif-row read opacity-60 hover:opacity-100 grayscale hover:grayscale-0">
+                                                    <div className="n-ico" style={{background: s.bg, color: s.color}}>
+                                                        <i className={`bi ${s.icon}`}></i>
+                                                    </div>
+                                                    <div className="n-body">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="n-title">{n.title}</div>
+                                                            <div className="n-time"><i className="bi bi-clock"></i>{timeAgo(n.created_at)}</div>
+                                                        </div>
+                                                        <div className="n-msg" dangerouslySetInnerHTML={{ __html: n.message.replace(/\n/g, '<br/>') }}></div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        <div className="text-center py-4 text-[10px] font-bold text-gray-300 tracking-widest uppercase border-t border-gray-50 dark:border-white/5">
+                                            &mdash; End of Notifications &mdash;
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </>
                     )}
-                    
-                    <div className={cn(
-                       "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110",
-                       isRead ? "bg-slate-50 text-slate-300" : "bg-lime-400 text-[#0b2419]"
-                    )}>
-                       <Icon size={28} />
-                    </div>
-
-                    <div className="flex-1">
-                       <div className="flex items-center justify-between gap-4 mb-2">
-                          <h4 className="text-[10px] font-black uppercase tracking-[2px] text-slate-400">
-                             {n.type.replace(/_/g, ' ')}
-                          </h4>
-                          <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest flex items-center gap-1">
-                             <Clock size={10} /> {new Date(n.created_at).toLocaleDateString()} at {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                       </div>
-                       <p className={cn(
-                          "text-sm font-bold leading-relaxed",
-                          isRead ? "text-slate-500" : "text-[#0b2419]"
-                       )}>
-                          {n.message}
-                       </p>
-                    </div>
-
-                    <div className="self-center">
-                       {isRead ? (
-                          <div className="w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center text-slate-200">
-                             <ChevronRight size={14} />
-                          </div>
-                       ) : (
-                          <div className="w-2 h-2 bg-lime-500 rounded-full animate-pulse" />
-                       )}
-                    </div>
-                 </motion.div>
-               );
-            })}
-         </AnimatePresence>
-
-         {filtered.length === 0 && (
-            <div className="py-32 text-center">
-               <div className="w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center mx-auto mb-8 text-slate-200 shadow-inner">
-                  <BellOff size={48} />
-               </div>
-               <h3 className="text-2xl font-black text-[#0b2419] tracking-tight">Zero Noise.</h3>
-               <p className="text-slate-400 text-sm font-medium max-w-xs mx-auto mt-2 tracking-tight">
-                  You're all caught up! No active notifications found matching your search.
-               </p>
-               <button 
-                 onClick={() => setSearch('')}
-                 className="mt-8 h-12 px-8 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#0b2419] hover:text-white transition-all"
-               >
-                  Refresh Feed
-               </button>
+                </div>
             </div>
-         )}
-      </div>
-
-      {/* Engagement Stats */}
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-6 opacity-40 hover:opacity-100 transition-opacity">
-         <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-3xl p-8">
-            <h5 className="text-[10px] font-black text-emerald-900/40 uppercase tracking-widest mb-4">Smart Delivery</h5>
-            <p className="text-xs font-bold text-emerald-900/60 leading-relaxed uppercase tracking-wider italic">
-               "Notifications are prioritized by urgency and financial impact."
-            </p>
-         </div>
-         <div className="bg-[#0b2419] rounded-3xl p-8 text-white/40">
-            <h5 className="text-[10px] font-black uppercase tracking-widest mb-4">Security Notice</h5>
-            <p className="text-xs font-bold leading-relaxed">
-               We will never ask for your password via notifications. Stay alert and report suspicious activity.
-            </p>
-         </div>
-      </div>
-
-    </div>
-  );
+        </div>
+    );
 }
