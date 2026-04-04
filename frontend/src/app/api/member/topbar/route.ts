@@ -9,88 +9,64 @@ export async function GET() {
             return NextResponse.json({ status: 'error', message: 'Unauthorized' }, { status: 401 });
         }
 
-        const memberId = session.id;
+        const userId = session.id;
 
-        // Fetch profile picture, gender, name from members table
-        const [memberRows] = await pool.execute(
-            'SELECT full_name, gender, profile_pic FROM members WHERE member_id = ?',
-            [memberId]
-        ) as any[];
+        // 1. Fetch Profile Data (Names, Pic)
+        const [user]: any = await pool.execute(
+            `SELECT first_name, last_name, avatar as pic, gender 
+             FROM members WHERE member_id = ?`,
+            [userId]
+        );
+        const userData = user[0] || { first_name: 'Member', last_name: '', pic: null, gender: 'male' };
+        const fullName = `${userData.first_name} ${userData.last_name}`.trim();
 
-        const member = memberRows[0] || {};
+        // 2. Fetch Unread Counts
+        const [unreadMsg]: any = await pool.execute(
+            `SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0`,
+            [userId]
+        );
+        const [unreadNot]: any = await pool.execute(
+            `SELECT COUNT(*) as count FROM notifications WHERE member_id = ? AND status = 'unread'`,
+            [userId]
+        );
 
-        // Convert BLOB profile_pic to base64 string with correct MIME type
-        let picBase64: string | null = null;
-        let picMime = 'image/jpeg';
-        if (member.profile_pic && Buffer.isBuffer(member.profile_pic)) {
-            const buf = member.profile_pic;
-            // Detect MIME from magic bytes
-            if (buf[0] === 0x89 && buf[1] === 0x50) picMime = 'image/png';
-            else if (buf[0] === 0xFF && buf[1] === 0xD8) picMime = 'image/jpeg';
-            else if (buf.slice(0, 4).toString('ascii') === 'RIFF') picMime = 'image/webp';
-            picBase64 = `data:${picMime};base64,${buf.toString('base64')}`;
-        }
+        // 3. Fetch Recent Notifications (Top 5)
+        const [notifications]: any = await pool.execute(
+            `SELECT notification_id, message, status, created_at 
+             FROM notifications WHERE member_id = ? 
+             ORDER BY created_at DESC LIMIT 5`,
+            [userId]
+        );
 
-        // Fetch unread messages count
-        const [msgRows] = await pool.execute(
-            `SELECT COUNT(*) as cnt FROM messages 
-             WHERE member_id = ? AND is_read = 0`,
-            [memberId]
-        ) as any[];
-
-        // Fetch unread notifications count
-        const [notifRows] = await pool.execute(
-            `SELECT COUNT(*) as cnt FROM notifications 
-             WHERE member_id = ? AND status = 'unread'`,
-            [memberId]
-        ) as any[];
-
-        // Fetch recent messages (last 5)
-        const [recentMsgs] = await pool.execute(
-            `SELECT message_id, sender_name, subject, body, sent_at, is_read 
-             FROM messages WHERE member_id = ? ORDER BY sent_at DESC LIMIT 5`,
-            [memberId]
-        ) as any[];
-
-        // Fetch recent notifications (last 5)
-        const [recentNotifs] = await pool.execute(
-            `SELECT notification_id, message, created_at, status 
-             FROM notifications WHERE member_id = ? ORDER BY created_at DESC LIMIT 5`,
-            [memberId]
-        ) as any[];
+        // 4. Fetch Recent Messages (Top 5)
+        const [messages]: any = await pool.execute(
+            `SELECT m.message_id, m.subject, m.body, m.sent_at, m.is_read, 'Support' as sender_name
+             FROM messages m
+             WHERE m.receiver_id = ?
+             ORDER BY m.sent_at DESC LIMIT 5`,
+            [userId]
+        );
 
         return NextResponse.json({
             status: 'success',
             data: {
                 profile: {
-                    name: member.full_name || session.name || 'Member',
-                    gender: member.gender || 'male',
-                    pic: picBase64,
+                    name: fullName,
+                    pic: userData.pic,
+                    gender: userData.gender
                 },
                 unread: {
-                    messages: msgRows[0]?.cnt || 0,
-                    notifications: notifRows[0]?.cnt || 0,
+                    messages: unreadMsg[0]?.count || 0,
+                    notifications: unreadNot[0]?.count || 0
                 },
                 recent: {
-                    messages: recentMsgs || [],
-                    notifications: recentNotifs || [],
+                    messages: messages,
+                    notifications: notifications
                 }
             }
         });
+
     } catch (error: any) {
-        // If DB tables don't exist yet, return safe defaults rather than crashing
-        const session = await getSession().catch(() => null);
-        return NextResponse.json({
-            status: 'success',
-            data: {
-                profile: {
-                    name: session?.name || 'Member',
-                    gender: 'male',
-                    pic: null,
-                },
-                unread: { messages: 0, notifications: 0 },
-                recent: { messages: [], notifications: [] }
-            }
-        });
+        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
     }
 }
