@@ -29,7 +29,9 @@ export const fetchApi = async <T = any>(endpoint: string, method: 'GET' | 'POST'
 
     return response.data;
   } catch (error: any) {
-    console.error(`API Fetch Error [${endpoint}]:`, error.message);
+    if (error.response && error.response.data) {
+        return error.response.data;
+    }
     throw error;
   }
 };
