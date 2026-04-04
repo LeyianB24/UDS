@@ -18,7 +18,7 @@ export function MemberTopbar() {
 
     const loadTopbarData = useCallback(async () => {
         try {
-            const res = await apiFetch('/api/v1/topbar_data.php');
+            const res = await apiFetch('/api/member/topbar');
             if (res && res.data) setData(res.data);
         } catch (e) {
             console.warn("[Topbar] API unavailable, using placeholders.");

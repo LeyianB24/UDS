@@ -62,7 +62,7 @@ export default function MemberDashboard() {
         setError('');
         try {
             // Using the updated axios-based apiFetch
-            const res = await apiFetch('/api/v1/member_dashboard.php');
+            const res = await apiFetch('/api/member/dashboard');
             if (res && res.data) {
                 setData(res.data);
                 setUsingMock(false);
