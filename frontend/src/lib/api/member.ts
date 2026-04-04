@@ -36,6 +36,8 @@ export interface SharesData {
 
 export interface LoanData {
     limit: number;
+    wallet_balance: number;
+    total_savings: number;
     active_loan: {
         loan_id: number;
         loan_type: string;
@@ -44,9 +46,16 @@ export interface LoanData {
         status: string;
         progress_percent: number;
         total_payable: number;
+        interest_rate: number;
         next_repayment_date: string;
+        guarantors: string[];
+    } | null;
+    pending_loan: {
+        amount: number;
+        status: string;
     } | null;
     history: {
+        loan_id: number;
         created_at: string;
         loan_type: string;
         amount: number;
