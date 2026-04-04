@@ -93,6 +93,7 @@ export function MemberSidebar() {
                             { lbl: 'Savings', href: '/member/savings', ico: 'bi-piggy-bank-fill' },
                             { lbl: 'Shares Portfolio', href: '/member/shares', ico: 'bi-pie-chart-fill' },
                             { lbl: 'My Loans', href: '/member/loans', ico: 'bi-cash-stack' },
+                            { lbl: 'Digital Wallet', href: '/member/wallet', ico: 'bi-wallet2' },
                             { lbl: 'Contributions', href: '/member/contributions', ico: 'bi-calendar-check-fill' },
                         ].map((m, i) => (
                             <Link key={i} href={m.href} className={`hd-nav-link ${isActive(m.href)}`}>
