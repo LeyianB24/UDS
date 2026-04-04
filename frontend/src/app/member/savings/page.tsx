@@ -217,10 +217,10 @@ export default function SavingsPage() {
                         <span className="txn-card-ct">{filteredHistory.length} records</span>
                     </div>
                     <div>
-                        {filteredHistory.map(txn => {
+                        {filteredHistory.map((txn, idx) => {
                             const isIn = ['deposit', 'contribution', 'savings_deposit'].includes(txn.transaction_type);
                             return (
-                                <div key={txn.id} className="txn-row">
+                                <div key={txn.transaction_id || idx} className="txn-row">
                                     <div className={`trn-dot ${isIn ? 'ico-in' : 'ico-out'}`}>
                                         <i className={`bi ${isIn ? 'bi-arrow-down-circle-fill' : 'bi-arrow-up-circle-fill'}`}></i>
                                     </div>
