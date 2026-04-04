@@ -1,4 +1,4 @@
 <?php
 // Redirect to public folder
-header("Location: public/index.php");
+header("Location: backend/public/index.php");
 exit;
