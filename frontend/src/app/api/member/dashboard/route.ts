@@ -19,24 +19,40 @@ export async function GET(request: Request) {
         const first_name = md.full_name?.split(' ')[0] || 'Member';
         const join_date = new Date(md.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 
-        // 2. Balances
-        const [ledgerRows]: any = await pool.execute(`
-            SELECT la.category, SUM(le.credit - le.debit) as balance 
-            FROM ledger_entries le 
-            JOIN ledger_accounts la ON le.account_id = la.account_id 
-            WHERE la.member_id = ? 
-            GROUP BY la.category
-        `, [member_id]);
-
+        // 2. Balances — try ledger_entries first, fall back to contributions-based calc
         let wallet = 0, savings = 0, shares = 0;
-        ledgerRows.forEach((r: any) => {
-            if (r.category === 'wallet') wallet = parseFloat(r.balance) || 0;
-            if (r.category === 'savings') savings = parseFloat(r.balance) || 0;
-            if (r.category === 'shares') shares = parseFloat(r.balance) || 0;
-        });
+        try {
+            const [ledgerRows]: any = await pool.execute(`
+                SELECT la.category, SUM(le.credit - le.debit) as balance 
+                FROM ledger_entries le 
+                JOIN ledger_accounts la ON le.account_id = la.account_id 
+                WHERE la.member_id = ? 
+                GROUP BY la.category
+            `, [member_id]);
+            ledgerRows.forEach((r: any) => {
+                if (r.category === 'wallet')  wallet  = parseFloat(r.balance) || 0;
+                if (r.category === 'savings') savings = parseFloat(r.balance) || 0;
+                if (r.category === 'shares')  shares  = parseFloat(r.balance) || 0;
+            });
+        } catch {
+            // ledger_entries table may not exist — fall back to contributions aggregate
+            try {
+                const [cRows]: any = await pool.execute(`
+                    SELECT
+                        COALESCE(SUM(CASE WHEN contribution_type='savings' THEN amount ELSE 0 END),0) as sv,
+                        COALESCE(SUM(CASE WHEN contribution_type='shares'  THEN amount ELSE 0 END),0) as sh
+                    FROM contributions WHERE member_id = ?
+                `, [member_id]);
+                savings = parseFloat(cRows[0]?.sv) || 0;
+                shares  = parseFloat(cRows[0]?.sh) || 0;
+            } catch { /* leave at 0 */ }
+        }
 
-        const [loanRows]: any = await pool.execute(`SELECT SUM(balance) as b FROM loans WHERE member_id=? AND status='approved'`, [member_id]);
-        const loans = parseFloat(loanRows[0]?.b || 0);
+        const [loanRows]: any = await pool.execute(
+            `SELECT COALESCE(SUM(current_balance), 0) as b FROM loans WHERE member_id=? AND status IN ('approved', 'disbursed', 'active')`,
+            [member_id]
+        );
+        const loans = parseFloat(loanRows[0]?.b) || 0;
 
         const net_worth = savings + shares - loans;
         const loan_pct = min(100, (loans / 500000) * 100);
