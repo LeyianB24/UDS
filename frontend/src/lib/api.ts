@@ -1,8 +1,8 @@
 // src/lib/api.ts
 import axios from 'axios';
 
-// The PHP Backend URL is typically accessed via action parameters in routes.php
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/UDS/api/v1/routes.php';
+// The API is now handled internally via Next.js App Router (/api/*)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -18,8 +18,8 @@ const api = axios.create({
 export const fetchApi = async <T = any>(endpoint: string, method: 'GET' | 'POST' = 'GET', data?: any): Promise<T> => {
   try {
     const response = await api({
+      url: `/${endpoint}`,
       method,
-      params: { action: endpoint }, 
       data,
     });
 
@@ -39,8 +39,8 @@ export const fetchApi = async <T = any>(endpoint: string, method: 'GET' | 'POST'
  * Migration: Now uses axios for consistency in CORS/Credentials.
  */
 export const apiFetch = async (url: string, options: any = {}): Promise<any> => {
-  const base = process.env.NEXT_PUBLIC_PHP_BASE || 'http://localhost/UDS';
-  const fullUrl = url.startsWith('http') ? url : `${base}${url}`;
+  // Use Next.js native /api resolution instead of PHP
+  const fullUrl = url.startsWith('http') ? url : url;
   
   try {
     // We use the direct URL with the same axios configuration

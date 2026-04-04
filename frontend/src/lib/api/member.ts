@@ -56,7 +56,7 @@ export interface LoanData {
 }
 
 export const MemberApi = {
-    getSavings: () => apiFetch<SavingsData>('/api/v1/member_savings.php'),
-    getShares: () => apiFetch<SharesData>('/api/v1/member_shares.php'),
-    getLoans: () => apiFetch<LoanData>('/api/v1/member_loans.php'),
+    getSavings: () => apiFetch<SavingsData>('/api/member/savings'),
+    getShares: () => apiFetch<SharesData>('/api/member/shares'),
+    getLoans: () => apiFetch<LoanData>('/api/member/loans'),
 };
