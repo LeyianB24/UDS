@@ -19,10 +19,16 @@ export async function GET() {
 
         const member = memberRows[0] || {};
 
-        // Convert BLOB profile_pic to base64 string if it exists
+        // Convert BLOB profile_pic to base64 string with correct MIME type
         let picBase64: string | null = null;
+        let picMime = 'image/jpeg';
         if (member.profile_pic && Buffer.isBuffer(member.profile_pic)) {
-            picBase64 = member.profile_pic.toString('base64');
+            const buf = member.profile_pic;
+            // Detect MIME from magic bytes
+            if (buf[0] === 0x89 && buf[1] === 0x50) picMime = 'image/png';
+            else if (buf[0] === 0xFF && buf[1] === 0xD8) picMime = 'image/jpeg';
+            else if (buf.slice(0, 4).toString('ascii') === 'RIFF') picMime = 'image/webp';
+            picBase64 = `data:${picMime};base64,${buf.toString('base64')}`;
         }
 
         // Fetch unread messages count

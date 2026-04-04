@@ -15,6 +15,7 @@ export function MemberTopbar() {
     const [showUsr, setShowUsr] = useState(false);
     const [showMsg, setShowMsg] = useState(false);
     const [showNot, setShowNot] = useState(false);
+    const [imgErr, setImgErr] = useState(false);
 
     const loadTopbarData = useCallback(async () => {
         try {
@@ -100,9 +101,16 @@ export function MemberTopbar() {
     const firstName  = memberName.split(' ')[0];
     const unreadMsgs = data?.unread?.messages || 0;
     const unreadNots = data?.unread?.notifications || 0;
-    const picSrc     = data?.profile?.pic 
-        ? `data:image/jpeg;base64,${data.profile.pic}` 
-        : `/assets/uploads/${data?.profile?.gender === 'female' ? 'female.jpg' : 'male.jpg'}`;
+
+    // Profile picture: API now returns a full data URI string
+    const picSrc = data?.profile?.pic
+        ?? `/assets/uploads/${data?.profile?.gender === 'female' ? 'female.jpg' : 'male.jpg'}`;
+
+    // Avatar initials (2 chars) for text fallback
+    const parts = memberName.split(' ');
+    const initials = parts.length > 1
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : memberName.slice(0, 2).toUpperCase();
 
     return (
         <nav className={`top-navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -207,7 +215,18 @@ export function MemberTopbar() {
                             <span className="tb-user-name">{memberName}</span>
                             <span className="tb-user-role-chip">MEMBER</span>
                         </div>
-                        <img src={picSrc} alt="Avatar" className="tb-avatar" onError={(e) => e.currentTarget.src = '/assets/uploads/male.jpg'} />
+                        {imgErr ? (
+                            <div className="tb-avatar flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg,#0b2419,#1d6044)', color: '#a3e635', border: '2px solid rgba(11,36,25,0.1)' }}>
+                                {initials}
+                            </div>
+                        ) : (
+                            <img
+                                src={picSrc}
+                                alt="Avatar"
+                                className="tb-avatar"
+                                onError={() => setImgErr(true)}
+                            />
+                        )}
                     </div>
                     {showUsr && (
                         <div className="tb-dropdown w-[210px] animate-in fade-in slide-in-from-top-2">
