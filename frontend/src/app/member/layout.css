@@ -28,6 +28,12 @@
     --tb-t2: #6b8a7a;
     --tb-t3: #8fada0;
     --tb-bg2: #f7fbf8;
+    /* Footer / page surface tokens */
+    --surf: #ffffff;
+    --surf2: #f7fbf8;
+    --t3: #8fada0;
+    --bdr: rgba(11,36,25,.07);
+    --bdr2: rgba(11,36,25,.04);
 }
 
 [data-bs-theme="dark"] {
@@ -47,6 +53,12 @@
     --tb-t2: #5a8a6e;
     --tb-t3: #3a6050;
     --tb-bg2: #0a1810;
+    /* Dark surface overrides */
+    --surf: #0d1d14;
+    --surf2: #0a1810;
+    --t3: #3a6050;
+    --bdr: rgba(255,255,255,.07);
+    --bdr2: rgba(255,255,255,.04);
 }
 
 .main-content {
@@ -494,11 +506,17 @@ body.sb-collapsed .hd-toggle-btn { left: calc(var(--sb-col) - 14px); }
    FOOTER
 ───────────────────────────────────────────── */
 .mf-footer {
-    background: var(--surf);
-    position: relative; overflow: hidden;
+    background: var(--surf, #f7fbf8);
+    position: relative;
     padding-top: 2.5px;
-    margin-top: auto; /* flex pushes footer to bottom */
+    margin-top: auto;
     flex-shrink: 0;
+    /* Ensure footer is visually above page content, never overlapped */
+    z-index: 10;
+    /* Crisp top border to separate from content */
+    border-top: 1px solid var(--bdr, rgba(11,36,25,.07));
+    /* Always opaque — prevent content bleeding through */
+    isolation: isolate;
 }
 
 .mf-footer::before {
