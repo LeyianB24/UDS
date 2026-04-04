@@ -14,7 +14,7 @@ export default function MemberLayout({
   return (
     <div className="hd-layout w-full min-h-screen text-[0.95rem]">
       <MemberSidebar />
-      <div className="main-content flex flex-col min-h-screen">
+      <div className="main-content">
         <MemberTopbar />
         
         {/* Content Wrapper */}

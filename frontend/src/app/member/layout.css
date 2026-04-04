@@ -52,6 +52,9 @@
 .main-content {
     margin-left: var(--sb-w);
     transition: margin-left .28s var(--sb-ease);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 body.sb-collapsed .main-content {
@@ -494,7 +497,8 @@ body.sb-collapsed .hd-toggle-btn { left: calc(var(--sb-col) - 14px); }
     background: var(--surf);
     position: relative; overflow: hidden;
     padding-top: 2.5px;
-    margin-top: auto;
+    margin-top: auto; /* flex pushes footer to bottom */
+    flex-shrink: 0;
 }
 
 .mf-footer::before {

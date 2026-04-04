@@ -37,6 +37,7 @@ body {
   background: var(--background);
   font-family: 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Do NOT set overflow: hidden or height: 100% — breaks scrolling */
 }
 
 /* Replicating Legacy Stat Card */
