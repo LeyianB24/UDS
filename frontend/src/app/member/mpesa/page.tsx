@@ -1,249 +1,209 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  PhoneCall, 
-  Smartphone, 
-  ShieldCheck, 
-  ArrowLeft, 
-  Zap, 
-  Wallet, 
-  TrendingUp, 
-  Heart, 
-  Landmark, 
-  X,
-  CheckCircle,
-  AlertCircle,
-  ArrowRight
-} from 'lucide-react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 
 export default function MpesaCheckoutPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const [amount, setAmount] = useState(searchParams.get('amount') || '');
-  const [phone, setPhone] = useState('');
-  const [type, setType] = useState(searchParams.get('type') || 'savings');
-  const [loanId, setLoanId] = useState(searchParams.get('loan_id') || '');
-  const [caseId, setCaseId] = useState(searchParams.get('case_id') || '');
-  
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-  const [message, setMessage] = useState('');
+    const searchParams = useSearchParams();
+    const router = useRouter();
 
-  useEffect(() => {
-    // Pre-fill phone from profile if possible (could add an API call here)
-  }, []);
+    const [amount, setAmount] = useState(searchParams.get('amount') || '');
+    const [phone, setPhone] = useState('');
+    const [type, setType] = useState(searchParams.get('type') || 'savings');
+    const [loanId, setLoanId] = useState(searchParams.get('loan_id') || '');
+    const [caseId, setCaseId] = useState(searchParams.get('case_id') || '');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus('processing');
-    
-    const res = await apiFetch('/api/v1/mpesa_stk.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: parseFloat(amount),
-        phone,
-        contribution_type: type,
-        loan_id: loanId ? parseInt(loanId) : null,
-        case_id: caseId ? parseInt(caseId) : null
-      })
-    });
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+    const [message, setMessage] = useState('');
 
-    if (res.status === 'success') {
-      setStatus('success');
-      setMessage(res.message);
-      // Optional: Wait and redirect
-      setTimeout(() => {
-        router.push('/member/dashboard');
-      }, 3000);
-    } else {
-      setStatus('error');
-      setMessage(res.message);
-      setLoading(false);
-    }
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setStatus('processing');
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6 -mt-10">
-      
-      <div className="w-full max-w-lg relative">
-        {/* Decorative background */}
-        <div className="absolute inset-0 bg-[#39B54A]/5 rounded-[48px] blur-3xl -z-10" />
-        
-        <div className="bg-white border border-emerald-900/5 rounded-[40px] overflow-hidden shadow-[0_30px_80px_rgba(57,181,74,0.12)]">
-          
-          {/* M-PESA Header */}
-          <div className="bg-gradient-to-br from-[#39B54A] to-[#2d8d3a] p-10 text-center relative overflow-hidden">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-             <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 rounded-full -ml-12 -mb-12 blur-xl" />
-             
-             <h1 className="text-4xl font-black text-white tracking-tighter mb-1">M-PESA</h1>
-             <p className="text-[10px] font-black text-white/50 uppercase tracking-[3px]">Secure Checkout</p>
-          </div>
+        try {
+            const res = await apiFetch('/api/member/mpesa/stk', {
+                method: 'POST',
+                body: JSON.stringify({
+                    amount: parseFloat(amount),
+                    phone,
+                    contribution_type: type,
+                    loan_id: loanId ? parseInt(loanId) : null,
+                    case_id: caseId ? parseInt(caseId) : null
+                })
+            });
 
-          <div className="p-8 md:p-12 relative">
-             <div className="flex justify-center -mt-16 mb-8">
-                <div className="w-16 h-16 bg-white border-4 border-[#f0f7f4] rounded-2xl shadow-xl flex items-center justify-center text-[#39B54A]">
-                   <ShieldCheck size={32} />
-                </div>
-             </div>
+            if (res.status === 'success') {
+                setStatus('success');
+                setMessage(res.message);
+                setTimeout(() => router.push('/member/dashboard'), 3000);
+            } else {
+                setStatus('error');
+                setMessage(res.message);
+            }
+        } catch (err: any) {
+            setStatus('error');
+            setMessage(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-             <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#39B54A]/10 text-[#39B54A] rounded-full text-[9px] font-black uppercase tracking-widest mb-4">
-                   <div className="w-1.5 h-1.5 rounded-full bg-[#39B54A] animate-pulse" />
-                   E2E Encrypted Transaction
-                </div>
-                <h2 className="text-xl font-black text-[#0b2419]">Secure Payment</h2>
-                <p className="text-slate-400 text-xs font-medium mt-1">Complete your transaction via STK Push</p>
-             </div>
+    return (
+        <div className="dash py-12">
+            <div className="max-w-xl mx-auto">
+                <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-[#39B54A]/10 overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+                    
+                    {/* Header */}
+                    <div className="bg-gradient-to-br from-[#39B54A] to-[#2d8d3a] p-12 text-center text-white relative">
+                        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                        <h1 className="text-5xl font-black tracking-tighter mb-1 select-none">M-PESA</h1>
+                        <p className="text-[10px] font-black uppercase tracking-[4px] opacity-60">Secure Checkout Portal</p>
+                    </div>
 
-             <form onSubmit={handleSubmit} className="space-y-6">
-                
-                {/* Amount Field */}
-                <div className="bg-slate-50 border border-emerald-900/5 rounded-3xl p-6 text-center focus-within:ring-2 focus-within:ring-[#39B54A]/20 transition-all">
-                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Amount to Deposit (KES)</label>
-                   <input 
-                     type="number" 
-                     className="w-full bg-transparent border-none text-4xl font-black text-[#0b2419] text-center focus:ring-0 placeholder:text-slate-200"
-                     placeholder="0.00"
-                     value={amount}
-                     onChange={e => setAmount(e.target.value)}
-                     required
-                   />
-                </div>
-
-                <div className="space-y-4">
-                   <div className="relative group">
-                      <PhoneCall className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#39B54A] transition-colors" size={18} />
-                      <input 
-                        type="tel" 
-                        placeholder="M-Pesa Number (e.g. 0712...)"
-                        className="w-full h-14 bg-slate-50 border-none rounded-2xl pl-14 pr-6 text-sm font-black focus:ring-2 focus:ring-[#39B54A]/20 transition-all"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
-                        required
-                      />
-                   </div>
-
-                   <div className="relative group">
-                      <Zap className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#39B54A] transition-colors" size={18} />
-                      <select 
-                        className="w-full h-14 bg-slate-50 border-none rounded-2xl pl-14 pr-6 text-sm font-black focus:ring-2 focus:ring-[#39B54A]/20 transition-all appearance-none"
-                        value={type}
-                        onChange={e => setType(e.target.value)}
-                        required
-                      >
-                         <option value="savings">Savings Deposit</option>
-                         <option value="shares">Buy Shares</option>
-                         <option value="welfare">General Welfare</option>
-                         <option value="loan_repayment">Loan Repayment</option>
-                      </select>
-                   </div>
-
-                   {type === 'loan_repayment' && (
-                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative group overflow-hidden">
-                        <Landmark className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-[#39B54A] transition-colors" size={18} />
-                        <input 
-                          type="number" 
-                          placeholder="Loan Reference ID"
-                          className="w-full h-14 bg-slate-50 border-none rounded-2xl pl-14 pr-6 text-sm font-black focus:ring-2 focus:ring-[#39B54A]/20 transition-all"
-                          value={loanId}
-                          onChange={e => setLoanId(e.target.value)}
-                          required
-                        />
-                     </motion.div>
-                   )}
-                </div>
-
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className={cn(
-                    "w-full h-16 bg-[#39B54A] text-white rounded-2xl text-[11px] font-black uppercase tracking-[2px] shadow-xl shadow-[#39B54A]/20 transition-all flex items-center justify-center gap-3",
-                    loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#1d7c2a] hover:scale-[1.02] active:scale-[0.98]"
-                  )}
-                >
-                   {loading ? "Waking Toolkit..." : "Initiate Payment"} <Smartphone size={18} />
-                </button>
-             </form>
-
-             <div className="mt-8 pt-8 border-t border-slate-50 text-center">
-                <Link href="/member/dashboard" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0b2419] transition-colors flex items-center justify-center gap-2">
-                   <ArrowLeft size={12} /> Return to Dashboard
-                </Link>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Processing Overlay */}
-      <AnimatePresence>
-        {status !== 'idle' && (
-           <motion.div 
-             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-             className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-[#0b2419]/95 backdrop-blur-md"
-           >
-              <div className="w-full max-w-sm text-center">
-                 {status === 'processing' && (
-                   <div className="space-y-8">
-                      <div className="relative w-24 h-24 mx-auto">
-                        <div className="absolute inset-0 border-4 border-[#39B54A]/10 rounded-full" />
-                        <div className="absolute inset-0 border-4 border-[#39B54A] border-t-transparent rounded-full animate-spin" />
-                        <div className="absolute inset-4 bg-[#39B54A]/20 rounded-full flex items-center justify-center text-[#39B54A]">
-                           <Smartphone size={32} />
+                    <div className="p-10 md:p-14 -mt-10 relative">
+                        <div className="flex justify-center mb-10">
+                            <div className="w-20 h-20 bg-white border-[6px] border-[#f0f7f4] rounded-3xl shadow-xl flex items-center justify-center text-[#39B54A] transform transition-transform hover:rotate-6">
+                                <i className="bi bi-shield-lock-fill text-4xl"></i>
+                            </div>
                         </div>
-                      </div>
-                      <div>
-                         <h3 className="text-xl font-black text-white mb-2">Check Your Phone</h3>
-                         <p className="text-white/40 text-xs font-medium leading-relaxed">
-                           A secure pop-up has been sent to <strong>{phone}</strong>. Enter your M-Pesa pin to complete the KES {amount} deposit.
-                         </p>
-                      </div>
-                   </div>
-                 )}
 
-                 {status === 'success' && (
-                   <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="space-y-8">
-                      <div className="w-24 h-24 mx-auto bg-[#39B54A] rounded-full flex items-center justify-center text-white shadow-[0_0_50px_rgba(57,181,74,0.5)]">
-                         <CheckCircle size={48} />
-                      </div>
-                      <div>
-                         <h3 className="text-xl font-black text-white mb-2">Request Successful</h3>
-                         <p className="text-white/40 text-xs font-medium leading-relaxed">{message}</p>
-                      </div>
-                      <button onClick={() => router.push('/member/dashboard')} className="h-12 px-8 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20">
-                         Proceed to Dashboard
-                      </button>
-                   </motion.div>
-                 )}
+                        <div className="text-center mb-12">
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#39B54A]/10 text-[#39B54A] rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                                <div className="w-2 h-2 rounded-full bg-[#39B54A] animate-pulse" />
+                                Encrypted STK Transaction
+                            </div>
+                            <h2 className="text-2xl font-black text-[#0b2419] tracking-tight">Financial Deposit</h2>
+                            <p className="text-gray-400 text-sm font-semibold mt-2">Enter your details to initiate an STK push.</p>
+                        </div>
 
-                 {status === 'error' && (
-                   <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="space-y-8">
-                      <div className="w-24 h-24 mx-auto bg-red-500 rounded-full flex items-center justify-center text-white shadow-[0_0_50px_rgba(239,68,68,0.5)]">
-                         <AlertCircle size={48} />
-                      </div>
-                      <div>
-                         <h3 className="text-xl font-black text-white mb-2">Push Failed</h3>
-                         <p className="text-white/40 text-xs font-medium leading-relaxed">{message}</p>
-                      </div>
-                      <button onClick={() => setStatus('idle')} className="h-12 px-8 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20">
-                         Try Again
-                      </button>
-                   </motion.div>
-                 )}
-              </div>
-           </motion.div>
-        )}
-      </AnimatePresence>
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            
+                            <div className="bg-bg border border-bdr rounded-[2rem] p-8 text-center transition-all focus-within:ring-4 focus-within:ring-[#39B54A]/10 focus-within:bg-white">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block">Amount to Deposit (KES)</label>
+                                <div className="flex items-center justify-center gap-3">
+                                    <span className="text-2xl font-black text-[#39B54A]">KES</span>
+                                    <input 
+                                        type="number" min="10"
+                                        className="bg-transparent border-none outline-none text-5xl font-black text-[#0b2419] w-full text-center placeholder:text-gray-100"
+                                        placeholder="0.00" value={amount} onChange={e => setAmount(e.target.value)} required
+                                    />
+                                </div>
+                            </div>
 
-    </div>
-  );
+                            <div className="space-y-5">
+                                <div className="relative">
+                                    <i className="bi bi-phone text-xl text-gray-300 absolute left-6 top-1/2 -translate-y-1/2"></i>
+                                    <input 
+                                        type="tel" placeholder="M-Pesa Phone (e.g. 0712...)"
+                                        className="w-full pl-16 pr-8 py-5 bg-bg border border-bdr rounded-2xl font-black text-[#0b2419] focus:bg-white focus:border-[#39B54A] focus:shadow-md transition-all outline-none"
+                                        value={phone} onChange={e => setPhone(e.target.value)} required
+                                    />
+                                </div>
+
+                                <div className="relative">
+                                    <i className="bi bi-tag text-xl text-gray-300 absolute left-6 top-1/2 -translate-y-1/2"></i>
+                                    <select 
+                                        className="w-full pl-16 pr-8 py-5 bg-bg border border-bdr rounded-2xl font-black text-[#0b2419] focus:bg-white focus:border-[#39B54A] focus:shadow-md transition-all outline-none appearance-none"
+                                        value={type} onChange={e => setType(e.target.value)} required
+                                    >
+                                        <option value="savings">Savings Portfolio</option>
+                                        <option value="shares">Ownership Shares</option>
+                                        <option value="welfare">Community Welfare</option>
+                                        <option value="loan_repayment">Loan Repayment</option>
+                                    </select>
+                                </div>
+
+                                {type === 'loan_repayment' && (
+                                    <div className="relative animate-in slide-in-from-top-2">
+                                        <i className="bi bi-bank2 text-xl text-gray-300 absolute left-6 top-1/2 -translate-y-1/2"></i>
+                                        <input 
+                                            type="text" placeholder="Loan ID (Required for Repayment)"
+                                            className="w-full pl-16 pr-8 py-5 bg-bg border border-bdr rounded-2xl font-black text-[#0b2419] focus:bg-white focus:border-[#39B54A] focus:shadow-md transition-all outline-none"
+                                            value={loanId} onChange={e => setLoanId(e.target.value)} required
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <button 
+                                type="submit" disabled={loading}
+                                className="w-full py-5 bg-[#39B54A] hover:bg-[#2d8d3a] text-white rounded-[2rem] font-black text-lg transition-all shadow-xl shadow-[#39B54A]/20 flex items-center justify-center gap-3 disabled:opacity-50 active:scale-95"
+                            >
+                                {loading ? <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></span> : (
+                                    <>
+                                        <i className="bi bi-send-check-fill"></i>
+                                        <span>INITIATE STK PUSH</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="mt-12 text-center pt-8 border-t border-gray-100">
+                            <Link href="/member/dashboard" className="text-[10px] font-black text-gray-400 no-underline hover:text-[#0b2419] transition-all uppercase tracking-widest inline-flex items-center gap-2">
+                                <i className="bi bi-arrow-left"></i> Back to Dashboard
+                            </Link>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {/* Status Overlay */}
+            {status !== 'idle' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-f/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="max-w-sm w-full text-center p-12">
+                        {status === 'processing' && (
+                            <div className="space-y-8">
+                                <div className="relative w-28 h-28 mx-auto">
+                                    <div className="absolute inset-0 border-8 border-white/5 rounded-full"></div>
+                                    <div className="absolute inset-0 border-8 border-[#39B54A] border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="absolute inset-6 bg-[#39B54A]/10 rounded-full flex items-center justify-center text-[#39B54A]">
+                                        <i className="bi bi-phone-vibrate-fill text-3xl animate-bounce"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-white tracking-tighter mb-4">Confirm on Phone</h3>
+                                    <p className="text-white/50 font-bold text-sm leading-relaxed">A secure request has been sent to your M-Pesa. Enter PIN to authorize KES {amount}.</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {status === 'success' && (
+                            <div className="space-y-8 animate-in zoom-in-90">
+                                <div className="w-28 h-28 mx-auto bg-[#39B54A] rounded-full flex items-center justify-center text-white shadow-2xl shadow-[#39B54A]/50">
+                                    <i className="bi bi-check-circle-fill text-6xl"></i>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-white tracking-tighter mb-4">Request Sent!</h3>
+                                    <p className="text-white/50 font-bold text-sm">{message}</p>
+                                </div>
+                                <Link href="/member/dashboard" className="w-full py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl no-underline font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
+                                    Continue <i className="bi bi-arrow-right"></i>
+                                </Link>
+                            </div>
+                        )}
+
+                        {status === 'error' && (
+                            <div className="space-y-8 animate-in zoom-in-90">
+                                <div className="w-28 h-28 mx-auto bg-red-500 rounded-full flex items-center justify-center text-white shadow-2xl shadow-red-500/50">
+                                    <i className="bi bi-x-circle-fill text-6xl"></i>
+                                </div>
+                                <div>
+                                    <h3 className="text-3xl font-black text-white tracking-tighter mb-4">Push Failed</h3>
+                                    <p className="text-white/50 font-bold text-sm">{message}</p>
+                                </div>
+                                <button onClick={() => setStatus('idle')} className="w-full py-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                                    Try Again
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }

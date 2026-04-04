@@ -2,31 +2,41 @@
 
 import React from 'react';
 import Link from 'next/link';
-import '../terms/legal.css';
+import './terms.css';
 
-export default function TermsofService() {
+export default function TermsPage() {
     return (
-        <div className="pb-5 relative z-10 w-full mb-10 mt-[-40px]">
-            <div className="legal-container">
-                <div className="legal-header">
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="bg-white/10 rounded-full p-3">
-                                <i className="bi bi-file-text text-3xl"></i>
-                            </div>
-                            <div>
-                                <h1 className="mb-0 font-bold text-3xl">Terms of Service</h1>
-                                <p className="mb-0 opacity-75">Umoja Drivers Sacco Membership Agreement</p>
-                            </div>
+        <div className="dash pb-20">
+            {/* HERO */}
+            <div className="legal-hero">
+                <div className="hero-pattern"></div>
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="text-center md:text-left">
+                        <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
+                            <i className="bi bi-shield-check-fill text-lime text-2xl"></i>
+                            <div className="text-[10px] font-black text-lime uppercase tracking-widest px-3 py-1 bg-lime/10 border border-lime/20 rounded-full">Legal Portal</div>
                         </div>
+                        <h1 className="text-5xl font-black tracking-tighter mb-2">Terms of Service</h1>
+                        <p className="text-white/40 text-lg font-semibold max-w-md">The mutual agreement between Umoja Drivers Sacco and its valued members.</p>
+                    </div>
+                    <Link href="/member/dashboard" className="px-8 py-3 bg-white text-f rounded-full font-black text-sm no-underline transform transition-all hover:scale-105 active:scale-95 shadow-xl hover:shadow-white/10">
+                        <i className="bi bi-arrow-left mr-2"></i> Dashboard
+                    </Link>
+                </div>
+            </div>
+
+            {/* CONTENT */}
+            <div className="legal-card lg:p-20">
+                <div className="flex items-center gap-3 mb-10 pb-6 border-b border-bdr">
+                    <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
+                        <i className="bi bi-calendar-event text-xl"></i>
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Effective Date</div>
+                        <div className="text-sm font-black text-t1">February 1, 2026</div>
                     </div>
                 </div>
-                
-                <div className="last-updated flex items-center">
-                    <i className="bi bi-calendar-check mr-2"></i>
-                    <strong>Last Updated:</strong> February 1, 2026
-                </div>
-                
+
                 <div className="legal-content">
                     <h2>1. Acceptance of Terms</h2>
                     <p>
@@ -34,15 +44,15 @@ export default function TermsofService() {
                         all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws.
                     </p>
                     
-                    <div className="highlight-box">
-                        <strong><i className="bi bi-info-circle mr-2"></i>Important:</strong><br />
+                    <div className="highlight-note">
+                        <strong><i className="bi bi-info-circle-fill mr-2"></i>Important:</strong> 
                         If you do not agree with any of these terms, you are prohibited from using or accessing this platform and 
                         participating in Sacco activities.
                     </div>
                     
                     <h2>2. Membership Eligibility</h2>
                     <p>To become a member of Umoja Drivers Sacco, you must:</p>
-                    <ul className="list-disc">
+                    <ul>
                         <li>Be at least 18 years of age</li>
                         <li>Be a professional driver or involved in the transport industry</li>
                         <li>Provide valid identification documents (National ID or Passport)</li>
@@ -51,7 +61,6 @@ export default function TermsofService() {
                     </ul>
                     
                     <h2>3. Member Contributions</h2>
-                    
                     <h3>3.1 Savings Contributions</h3>
                     <p>
                         Members are required to make regular savings contributions as determined by the Sacco's bylaws. 
@@ -71,10 +80,9 @@ export default function TermsofService() {
                     </p>
                     
                     <h2>4. Loan Services</h2>
-                    
                     <h3>4.1 Loan Eligibility</h3>
                     <p>Members may apply for loans subject to the following conditions:</p>
-                    <ul className="list-disc">
+                    <ul>
                         <li>Minimum 6 months of active membership</li>
                         <li>Loan limit is 3 times your total savings balance</li>
                         <li>All previous loans must be fully repaid</li>
@@ -83,130 +91,29 @@ export default function TermsofService() {
                     
                     <h3>4.2 Loan Repayment</h3>
                     <p>
-                        Loans must be repaid according to the agreed schedule. Failure to repay may result in:
+                        Loans must be repaid according to the agreed schedule. Failure to repay may result in suspension of borrowing privileges or recovery action.
                     </p>
-                    <ul className="list-disc">
-                        <li>Suspension of borrowing privileges</li>
-                        <li>Recovery action against guarantors</li>
-                        <li>Legal action for debt recovery</li>
-                        <li>Membership suspension or termination</li>
-                    </ul>
                     
                     <h2>5. Account Security</h2>
                     <p>You are responsible for maintaining the confidentiality of your account credentials. You agree to:</p>
-                    <ul className="list-disc">
+                    <ul>
                         <li>Keep your password secure and not share it with others</li>
                         <li>Notify the Sacco immediately of any unauthorized access</li>
                         <li>Accept responsibility for all activities under your account</li>
-                        <li>Use strong, unique passwords and change them regularly</li>
                     </ul>
-                    
+
                     <h2>6. Platform Usage</h2>
-                    
-                    <h3>6.1 Acceptable Use</h3>
-                    <p>You agree to use the Sacco platform only for lawful purposes. Prohibited activities include:</p>
-                    <ul className="list-disc">
-                        <li>Attempting to gain unauthorized access to any part of the system</li>
-                        <li>Interfering with the proper functioning of the platform</li>
-                        <li>Uploading malicious code or viruses</li>
-                        <li>Misrepresenting your identity or affiliation</li>
-                        <li>Using the platform for fraudulent activities</li>
-                    </ul>
-                    
-                    <h3>6.2 Mobile Money Transactions</h3>
                     <p>
-                        The Sacco integrates with M-Pesa and other mobile money platforms for convenience. You acknowledge that:
+                        The Sacco integrates with M-Pesa and other mobile money platforms for convenience. All transactions are subject to verification and service provider terms.
                     </p>
-                    <ul className="list-disc">
-                        <li>Transaction fees may apply as per the service provider's rates</li>
-                        <li>The Sacco is not responsible for mobile money service outages</li>
-                        <li>You must ensure sufficient funds in your mobile wallet for transactions</li>
-                        <li>All transactions are subject to verification and may be delayed</li>
-                    </ul>
-                    
-                    <h2>7. Dividends and Returns</h2>
-                    <p>
-                        Dividends on share capital are declared annually based on the Sacco's financial performance and are subject to:
-                    </p>
-                    <ul className="list-disc">
-                        <li>Approval by the Annual General Meeting</li>
-                        <li>Deduction of applicable taxes</li>
-                        <li>Retention of reserves as required by law</li>
-                        <li>Distribution proportional to share capital held</li>
-                    </ul>
-                    
-                    <h2>8. Membership Termination</h2>
-                    
-                    <h3>8.1 Voluntary Exit</h3>
-                    <p>
-                        Members may voluntarily exit the Sacco by submitting a written notice. Upon exit:
-                    </p>
-                    <ul className="list-disc">
-                        <li>All outstanding loans must be fully repaid</li>
-                        <li>Savings and share capital will be refunded after clearance</li>
-                        <li>A processing period of up to 90 days may apply</li>
-                        <li>Exit fees may be deducted as per Sacco bylaws</li>
-                    </ul>
-                    
-                    <h3>8.2 Involuntary Termination</h3>
-                    <p>The Sacco reserves the right to terminate membership for:</p>
-                    <ul className="list-disc">
-                        <li>Violation of these Terms of Service</li>
-                        <li>Fraudulent activities or misrepresentation</li>
-                        <li>Failure to meet membership obligations</li>
-                        <li>Conduct detrimental to the Sacco's interests</li>
-                    </ul>
-                    
-                    <h2>9. Limitation of Liability</h2>
-                    <p>
-                        The Sacco shall not be liable for any indirect, incidental, special, consequential, or punitive damages 
-                        resulting from your use of the platform or services. This includes, but is not limited to:
-                    </p>
-                    <ul className="list-disc">
-                        <li>Loss of profits or savings</li>
-                        <li>Service interruptions or data loss</li>
-                        <li>Third-party service failures (e.g., M-Pesa outages)</li>
-                        <li>Unauthorized access to your account due to your negligence</li>
-                    </ul>
-                    
-                    <h2>10. Dispute Resolution</h2>
-                    <p>
-                        Any disputes arising from these terms shall be resolved through:
-                    </p>
-                    <ol className="list-decimal">
-                        <li>Internal mediation by the Sacco's Dispute Resolution Committee</li>
-                        <li>Arbitration as per the Kenyan Arbitration Act</li>
-                        <li>Legal proceedings in Kenyan courts as a last resort</li>
-                    </ol>
-                    
-                    <h2>11. Amendments</h2>
-                    <p>
-                        The Sacco reserves the right to modify these Terms of Service at any time. Members will be notified of 
-                        significant changes via email or platform notifications. Continued use of the platform after changes 
-                        constitutes acceptance of the modified terms.
-                    </p>
-                    
-                    <h2>12. Governing Law</h2>
-                    <p>
-                        These Terms of Service are governed by and construed in accordance with the laws of the Republic of Kenya, 
-                        including the Sacco Societies Act and regulations issued by the Sacco Societies Regulatory Authority (SASRA).
-                    </p>
-                    
-                    <h2>13. Contact Information</h2>
-                    <p>
-                        For questions or concerns regarding these Terms of Service, please contact:
-                    </p>
-                    <div className="highlight-box">
-                        <strong>Umoja Drivers Sacco</strong><br />
-                        Email: <Link href="mailto:info@umojadriversacco.co.ke">info@umojadriversacco.co.ke</Link><br />
-                        Phone: +254 700 000 000<br />
-                        Address: Nairobi, Kenya
-                    </div>
-                    
-                    <div className="text-center mt-12 pt-6 border-t border-gray-200 dark:border-gray-800">
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-0">
-                            By using this platform, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
-                        </p>
+
+                    <div className="legal-footer">
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">Umoja Drivers Sacco · Solidarity & Prosperity</p>
+                        <div className="flex justify-center gap-6">
+                            <span className="text-[10px] font-bold text-gray-400 no-underline hover:text-fs">Privacy Policy</span>
+                            <span className="text-[10px] font-bold text-gray-400 no-underline hover:text-fs">Cookie Settings</span>
+                            <span className="text-[10px] font-bold text-gray-400 no-underline hover:text-fs">Support Helpdesk</span>
+                        </div>
                     </div>
                 </div>
             </div>
