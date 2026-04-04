@@ -49,7 +49,6 @@ export async function GET() {
         }
 
         // Fetch Balances
-        const [txns]: any = await pool.execute(`SELECT transaction_type, amount FROM transactions WHERE member_id=? AND status='completed'`, [session.id]);
         let total_savings = 50000;
         let wallet = 12000;
         

@@ -12,9 +12,9 @@ export default function MemberLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="hd-layout w-full overscroll-none overflow-x-hidden min-h-screen relative text-[0.95rem] flex">
+    <div className="hd-layout w-full min-h-screen text-[0.95rem]">
       <MemberSidebar />
-      <div className="main-content flex-1 flex flex-col min-h-screen">
+      <div className="main-content flex flex-col min-h-screen">
         <MemberTopbar />
         
         {/* Content Wrapper */}
