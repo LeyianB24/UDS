@@ -1,282 +1,424 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  HelpCircle, 
-  MessageSquare, 
-  Search, 
-  Plus, 
-  ArrowRight, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle,
-  ArrowLeft,
-  ChevronRight,
-  LifeBuoy,
-  FileText,
-  Phone,
-  Mail
-} from 'lucide-react';
-import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import './support.css';
+
+const CATEGORIES = [
+    { id: 'loans', label: 'Loans & Repayments', icon: 'bi-bank2', bg: 'var(--amb-bg)', col: 'var(--amb)' },
+    { id: 'savings', label: 'Savings & Deposits', icon: 'bi-piggy-bank-fill', bg: 'var(--grn-bg)', col: 'var(--grn)' },
+    { id: 'shares', label: 'Shares & Equity', icon: 'bi-pie-chart-fill', bg: 'var(--blu-bg)', col: 'var(--blu)' },
+    { id: 'welfare', label: 'Welfare & Benefits', icon: 'bi-heart-pulse-fill', bg: 'var(--red-bg)', col: 'var(--red)' },
+    { id: 'withdrawals', label: 'Withdrawals & M-Pesa', icon: 'bi-phone-vibrate-fill', bg: 'var(--grn-bg)', col: 'var(--grn)' },
+    { id: 'technical', label: 'Technical Issue', icon: 'bi-tools', bg: 'rgba(124,77,255,.08)', col: '#7c4dff' },
+    { id: 'profile', label: 'Account / Profile', icon: 'bi-person-badge-fill', bg: 'var(--blu-bg)', col: 'var(--blu)' },
+    { id: 'investments', label: 'Investments', icon: 'bi-buildings-fill', bg: 'var(--amb-bg)', col: 'var(--amb)' },
+    { id: 'general', label: 'General Inquiry', icon: 'bi-chat-dots-fill', bg: 'rgba(11,36,25,.07)', col: 'var(--t2)' },
+];
+
+const PRIORITIES = [
+    { id: 'low', label: 'Low', dot: '#16a34a' },
+    { id: 'normal', label: 'Normal', dot: '#2563eb' },
+    { id: 'high', label: 'High', dot: '#d97706' },
+    { id: 'urgent', label: 'Urgent', dot: '#dc2626' },
+];
 
 export default function SupportPage() {
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ subject: '', category: 'general', message: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [msg, setMsg] = useState({ type: '', text: '' });
+    const [activeTab, setActiveTab] = useState('new-ticket');
+    const [tickets, setTickets] = useState<any[]>([]);
+    const [counts, setCounts] = useState({ open: 0, resolved: 0, total: 0 });
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadTickets();
-  }, []);
+    const [selectedCat, setSelectedCat] = useState('general');
+    const [priority, setPriority] = useState('normal');
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
+    const [refNo, setRefNo] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [flash, setFlash] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null);
 
-  const loadTickets = async () => {
-    try {
-      const res = await apiFetch('/api/v1/member_support.php');
-      setTickets(res.data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadData = useCallback(async () => {
+        try {
+            const res = await apiFetch('/api/member/support');
+            if (res.status === 'success') {
+                setTickets(res.data.tickets);
+                setCounts(res.data.counts);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setMsg({ type: '', text: '' });
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-    try {
-      const res = await apiFetch('/api/v1/member_support.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-      setMsg({ type: 'success', text: res.message });
-      setForm({ subject: '', category: 'general', message: '' });
-      setTimeout(() => {
-          setShowModal(false);
-          loadTickets();
-      }, 1500);
-    } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!subject || !message) return;
 
-  if (loading) return <div className="p-10 text-center"><div className="spinner-border text-emerald-600"></div></div>;
+        setSubmitting(true);
+        setFlash(null);
 
-  return (
-    <div className="max-w-7xl mx-auto px-6 pb-20 mt-8">
-      
-      {/* Header */}
-      <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-         <div>
-            <Link href="/member/dashboard" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-[#0b2419] transition-all mb-4">
-                <ArrowLeft size={12} /> Dashboard
-            </Link>
-            <h1 className="text-4xl font-black tracking-tighter text-[#0b2419] flex items-center gap-4">
-                Support Center
-            </h1>
-         </div>
-         <button 
-           onClick={() => setShowModal(true)}
-           className="bg-[#0b2419] text-white h-14 px-8 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-3 hover:shadow-2xl transition-all active:scale-95 shadow-lg shadow-emerald-950/20"
-         >
-            New Help Request <Plus size={18} className="text-lime-400" />
-         </button>
-      </div>
+        try {
+            const res = await apiFetch('/api/member/support', {
+                method: 'POST',
+                body: JSON.stringify({
+                    category: selectedCat,
+                    subject,
+                    message,
+                    priority,
+                    reference_no: refNo
+                })
+            });
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-         
-         {/* Sidebar Stats & Info */}
-         <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white border border-emerald-900/5 rounded-[32px] p-8 shadow-sm">
-               <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6">Quick Contacts</h4>
-               <div className="space-y-4">
-                  <div className="flex items-center gap-4 group cursor-pointer">
-                     <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                        <Phone size={18} />
-                     </div>
-                     <div>
-                        <div className="text-[10px] font-black text-[#0b2419] uppercase tracking-tight">Call Us</div>
-                        <div className="text-[11px] font-bold text-slate-400">+254 700 000 000</div>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-4 group cursor-pointer">
-                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <Mail size={18} />
-                     </div>
-                     <div>
-                        <div className="text-[10px] font-black text-[#0b2419] uppercase tracking-tight">Email Support</div>
-                        <div className="text-[11px] font-bold text-slate-400">help@umojasacco.co.ke</div>
-                     </div>
-                  </div>
-               </div>
-            </div>
+            if (res.status === 'success') {
+                setFlash({ type: 'ok', msg: res.message });
+                setSubject('');
+                setMessage('');
+                setRefNo('');
+                loadData();
+                // Optionally switch to history tab
+                setTimeout(() => setActiveTab('my-tickets'), 2000);
+            } else {
+                setFlash({ type: 'err', msg: res.message });
+            }
+        } catch (e: any) {
+            setFlash({ type: 'err', msg: e.message });
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-            <div className="bg-[#0b2419] rounded-[32px] p-8 text-white relative overflow-hidden">
-                <div className="relative z-10">
-                   <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-6 text-lime-400">
-                      <LifeBuoy size={24} />
-                   </div>
-                   <h4 className="text-sm font-black mb-2 tracking-tight">24/7 Assistance</h4>
-                   <p className="text-white/40 text-[10px] font-medium leading-relaxed mb-6">Our dedicated team is always ready to help you navigate your finances.</p>
-                   <Link href="/member/messages" className="text-[10px] font-black text-lime-400 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2">
-                       Personal Chat <ChevronRight size={14} />
-                   </Link>
+    return (
+        <div className="dash">
+            {/* HERO */}
+            <div className="support-hero">
+                <div className="hero-mesh"></div>
+                <div className="hero-dots"></div>
+                <div className="hero-ring r1"></div>
+                <div className="hero-ring r2"></div>
+                <div className="hero-ring r3"></div>
+
+                <Link href="/member/dashboard" className="btn-back">
+                    <i className="bi bi-arrow-left"></i> Dashboard
+                </Link>
+
+                <div className="hero-inner">
+                    <div className="hero-eyebrow">
+                        <span className="eyebrow-dot"></span>
+                        Member Support
+                    </div>
+                    <h1>How can we<br />help you today?</h1>
+                    <p className="hero-sub">
+                        Our specialized support team handles everything from
+                        <strong> loan queries</strong> to <strong>technical issues</strong>.
+                        Submit a ticket and we'll respond within 24 hours.
+                    </p>
+                    <div className="hero-pills">
+                        <span className="hero-pill"><i className="bi bi-lightning-charge-fill mr-1"></i> &lt; 24hr response</span>
+                        <span className="hero-pill"><i className="bi bi-shield-check-fill mr-1"></i> Secure &amp; confidential</span>
+                        <span className="hero-pill"><i className="bi bi-headset mr-1"></i> 9 support desks</span>
+                    </div>
                 </div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-lime-400/10 blur-[60px] rounded-full" />
-            </div>
-         </div>
 
-         {/* Ticket List */}
-         <div className="lg:col-span-3">
-            <div className="bg-white border border-emerald-900/5 rounded-[40px] shadow-sm overflow-hidden mb-8">
-               <div className="p-8 border-b border-emerald-900/5 flex items-center justify-between bg-slate-50/50">
-                  <h3 className="text-sm font-black text-[#0b2419] uppercase tracking-widest">Your Support History</h3>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-black uppercase tracking-tight">
-                     {tickets.length} Active Tickets
-                  </div>
-               </div>
-
-               {tickets.length === 0 ? (
-                  <div className="p-20 text-center text-slate-400">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <FileText size={32} />
+                <div className="hero-right">
+                    <div className="hero-stat-block">
+                        <div className="hstat">
+                            <div className="hstat-val">{counts.open}</div>
+                            <div className="hstat-lbl">Open Tickets</div>
+                        </div>
+                        <div className="hstat">
+                            <div className="hstat-val">{counts.resolved}</div>
+                            <div className="hstat-lbl">Resolved</div>
+                        </div>
+                        <div className="hstat">
+                            <div className="hstat-val">{counts.total}</div>
+                            <div className="hstat-lbl">Total Submitted</div>
+                        </div>
                     </div>
-                    <h5 className="text-sm font-black text-[#0b2419] mb-1">No Active Tickets</h5>
-                    <p className="text-xs font-medium">Any help requests you submit will appear here.</p>
-                  </div>
-               ) : (
-                  <div className="overflow-x-auto">
-                     <table className="w-full text-left">
-                        <thead>
-                           <tr className="border-b border-emerald-900/5">
-                              <th className="p-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference</th>
-                              <th className="p-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                              <th className="p-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
-                              <th className="p-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                              <th className="p-8 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Created</th>
-                           </tr>
-                        </thead>
-                        <tbody>
-                           {tickets.map((t, i) => (
-                              <tr key={i} className="group hover:bg-slate-50 transition-colors border-b border-emerald-900/[0.03] last:border-0">
-                                 <td className="p-8">
-                                    <span className="text-[11px] font-black text-[#0b2419] bg-emerald-50 px-2 py-1 rounded-md">{t.ref_no}</span>
-                                 </td>
-                                 <td className="p-8 min-w-[200px]">
-                                    <div className="text-[11px] font-black text-[#0b2419] mb-1">{t.subject}</div>
-                                    <div className="text-[10px] font-medium text-slate-400 truncate max-w-[200px]">{t.message}</div>
-                                 </td>
-                                 <td className="p-8">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.category}</span>
-                                 </td>
-                                 <td className="p-8">
-                                    <div className={cn(
-                                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tight",
-                                        t.status === 'open' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                                    )}>
-                                       {t.status === 'open' ? <Clock size={12} /> : <CheckCircle size={12} />}
-                                       {t.status}
+                </div>
+            </div>
+
+            {/* FLOATING STATS */}
+            <div className="stats-float">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="sc sc-g">
+                        <div className="sc-ico" style={{background:'var(--grn-bg)',color:'var(--grn)'}}><i className="bi bi-lightning-charge-fill"></i></div>
+                        <div className="sc-lbl">Avg Response</div>
+                        <div className="sc-val">&lt; 24 hrs</div>
+                        <div className="sc-meta">Business days</div>
+                    </div>
+                    <div className="sc sc-a">
+                        <div className="sc-ico" style={{background:'var(--amb-bg)',color:'var(--amb)'}}><i className="bi bi-ticket-detailed-fill"></i></div>
+                        <div className="sc-lbl">Open Tickets</div>
+                        <div className="sc-val">{counts.open}</div>
+                        <div className="sc-meta">{counts.open > 0 ? 'Awaiting response' : 'All clear!'}</div>
+                    </div>
+                    <div className="sc sc-b">
+                        <div className="sc-ico" style={{background:'var(--blu-bg)',color:'var(--blu)'}}><i className="bi bi-check2-circle"></i></div>
+                        <div className="sc-lbl">Resolved</div>
+                        <div className="sc-val">{counts.resolved}</div>
+                        <div className="sc-meta">Successfully closed</div>
+                    </div>
+                    <div className="sc sc-l">
+                        <div className="sc-ico" style={{background:'var(--lg)',color:'var(--lt)'}}><i className="bi bi-clock-history"></i></div>
+                        <div className="sc-lbl">Service Hours</div>
+                        <div className="sc-val">Mon–Sat</div>
+                        <div className="sc-meta">08:00 – 17:00 EAT</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* FLASH MESSAGES */}
+            <div className="px-[52px] pt-7">
+                {flash && (
+                    <div className={`flash ${flash.type}`}>
+                        <div className="flash-ico">
+                            <i className={`bi ${flash.type === 'ok' ? 'bi-check2-circle' : 'bi-exclamation-triangle-fill'}`}></i>
+                        </div>
+                        <div>
+                            <div className="flash-title">{flash.type === 'ok' ? 'Ticket Submitted' : 'Submission Failed'}</div>
+                            <div className="flash-sub">{flash.msg}</div>
+                        </div>
+                        <button className="flash-close" onClick={() => setFlash(null)}>&times;</button>
+                    </div>
+                )}
+            </div>
+
+            {/* BODY GRID */}
+            <div className="pg-body">
+                {/* Sidebar */}
+                <div className="sidebar-col">
+                    <div className="card">
+                        <div className="card-head">
+                            <div className="ch-ico" style={{background:'var(--lg)',color:'var(--lt)'}}><i className="bi bi-telephone-fill"></i></div>
+                            <div>
+                                <div className="ch-title">Direct Contact</div>
+                                <div className="ch-sub">Reach us outside tickets</div>
+                            </div>
+                        </div>
+                        <div className="card-body">
+                            <div className="contact-item">
+                                <div className="ci-ico"><i className="bi bi-geo-alt-fill"></i></div>
+                                <div>
+                                    <div className="ci-label">Headquarters</div>
+                                    <div className="ci-value">Mombasa, Kenya</div>
+                                </div>
+                            </div>
+                            <div className="contact-item">
+                                <div className="ci-ico"><i className="bi bi-telephone-outbound-fill"></i></div>
+                                <div>
+                                    <div className="ci-label">Hotline</div>
+                                    <div className="ci-value">+254 700 000000</div>
+                                </div>
+                            </div>
+                            <div className="contact-item">
+                                <div className="ci-ico"><i className="bi bi-envelope-paper-fill"></i></div>
+                                <div>
+                                    <div className="ci-label">Official Email</div>
+                                    <div className="ci-value">support@umoja.com</div>
+                                </div>
+                            </div>
+
+                            <div className="hours-block">
+                                <div className="hb-inner">
+                                    <div className="hb-ico-wrap"><i className="bi bi-clock-history"></i></div>
+                                    <div className="hb-title">Service Hours</div>
+                                    <div className="hb-row">
+                                        <span className="hb-day">Mon – Fri</span>
+                                        <span className="hb-time">08:00 – 17:00</span>
                                     </div>
-                                 </td>
-                                 <td className="p-8 text-right">
-                                    <div className="text-[10px] font-bold text-slate-400">{new Date(t.created_at).toLocaleDateString()}</div>
-                                 </td>
-                              </tr>
-                           ))}
-                        </tbody>
-                     </table>
-                  </div>
-               )}
+                                    <div className="hb-row">
+                                        <span className="hb-day">Saturday</span>
+                                        <span className="hb-time">09:00 – 13:00</span>
+                                    </div>
+                                    <div className="hb-row">
+                                        <span className="hb-day">Sunday</span>
+                                        <span className="hb-time opacity-30">Closed</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="card">
+                        <div className="card-head">
+                            <div className="ch-ico" style={{background:'var(--blu-bg)',color:'var(--blu)'}}><i className="bi bi-grid-fill"></i></div>
+                            <div><div className="ch-title">Quick Access</div><div className="ch-sub">Jump to your accounts</div></div>
+                        </div>
+                        <div className="card-body !pb-3.5">
+                            {[
+                                { icon: 'bi-piggy-bank-fill', bg: 'var(--grn-bg)', col: 'var(--grn)', label: 'Savings Account', href: '/member/savings' },
+                                { icon: 'bi-bank2', bg: 'var(--amb-bg)', col: 'var(--amb)', label: 'My Loans', href: '/member/loans' },
+                                { icon: 'bi-heart-pulse-fill', bg: 'var(--red-bg)', col: 'var(--red)', label: 'Welfare Hub', href: '/member/welfare' },
+                                { icon: 'bi-arrow-left-right', bg: 'var(--blu-bg)', col: 'var(--blu)', label: 'All Transactions', href: '/member/transactions' },
+                            ].map((link, idx) => (
+                                <Link key={idx} href={link.href} className="quick-link">
+                                    <div className="ql-ico" style={{background: link.bg, color: link.col}}><i className={`bi ${link.icon}`}></i></div>
+                                    {link.label}
+                                    <i className="bi bi-arrow-right ql-arrow"></i>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main */}
+                <div className="main-col">
+                    <div className="tab-shell">
+                        <div className="tab-shell-head">
+                            <button 
+                                className={`stab ${activeTab === 'new-ticket' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('new-ticket')}
+                            >
+                                <i className="bi bi-plus-circle-fill mr-1"></i> New Ticket
+                            </button>
+                            <button 
+                                className={`stab ${activeTab === 'my-tickets' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('my-tickets')}
+                            >
+                                <i className="bi bi-ticket-detailed-fill mr-1"></i> My Tickets
+                                {counts.open > 0 && <span className="stab-badge">{counts.open}</span>}
+                            </button>
+                        </div>
+
+                        {activeTab === 'new-ticket' ? (
+                            <div className="p-7 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="form-divider">Step 1 &mdash; Choose a Category</div>
+                                <div className="cat-grid">
+                                    {CATEGORIES.map((cat) => (
+                                        <div 
+                                            key={cat.id} 
+                                            className={`cat-tile ${selectedCat === cat.id ? 'selected' : ''}`}
+                                            onClick={() => setSelectedCat(cat.id)}
+                                        >
+                                            <div className="cat-tile-check"><i className="bi bi-check"></i></div>
+                                            <div className="cat-tile-ico" style={{background: cat.bg, color: cat.col}}>
+                                                <i className={`bi ${cat.icon}`}></i>
+                                            </div>
+                                            <span className="cat-tile-lbl">{cat.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <form onSubmit={handleSubmit}>
+                                    <div className="form-divider">Step 2 &mdash; Ticket Details</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="col-span-1 md:col-span-1.5 field-group">
+                                            <label className="field-lbl">Subject</label>
+                                            <div className="input-with-icon">
+                                                <i className="bi bi-tag-fill"></i>
+                                                <input 
+                                                    type="text" 
+                                                    className="field-ctrl" 
+                                                    placeholder="Briefly describe the issue" 
+                                                    value={subject}
+                                                    onChange={e => setSubject(e.target.value)}
+                                                    required 
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="field-group">
+                                            <label className="field-lbl">Ref / Transaction ID <span className="opt-badge ml-1">Optional</span></label>
+                                            <div className="input-with-icon">
+                                                <i className="bi bi-hash"></i>
+                                                <input 
+                                                    type="text" 
+                                                    className="field-ctrl" 
+                                                    placeholder="e.g. S9K1234567" 
+                                                    value={refNo}
+                                                    onChange={e => setRefNo(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="field-group">
+                                        <label className="field-lbl">Detailed Description</label>
+                                        <textarea 
+                                            className="field-ctrl" 
+                                            rows={6} 
+                                            placeholder="Describe your issue clearly — include dates, amounts, and error messages..." 
+                                            value={message}
+                                            onChange={e => setMessage(e.target.value)}
+                                            required
+                                        ></textarea>
+                                    </div>
+
+                                    <div className="field-group">
+                                        <label className="field-lbl">Priority</label>
+                                        <div className="priority-row">
+                                            {PRIORITIES.map((pri) => (
+                                                <label 
+                                                    key={pri.id}
+                                                    className={`pri-pill ${priority === pri.id ? `selected-${pri.id}` : ''}`}
+                                                    onClick={() => setPriority(pri.id)}
+                                                >
+                                                    <span className="pri-dot" style={{background: pri.dot}}></span>
+                                                    {pri.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" className="btn-submit mt-6" disabled={submitting}>
+                                        {submitting ? (
+                                            <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                                        ) : (
+                                            <><i className="bi bi-send-fill mr-1"></i> Submit Ticket</>
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <table className="ticket-table">
+                                    <thead>
+                                        <tr>
+                                            <th className="pl-6">ID</th>
+                                            <th>Category</th>
+                                            <th>Subject</th>
+                                            <th>Status</th>
+                                            <th className="pr-6">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {tickets.length > 0 ? tickets.map((t) => (
+                                            <tr key={t.support_id}>
+                                                <td className="pl-6"><span className="tid">#{t.support_id}</span></td>
+                                                <td><span className="tcat">{t.category}</span></td>
+                                                <td className="font-bold text-gray-800 dark:text-gray-200">{t.subject}</td>
+                                                <td>
+                                                    <span className={`tstatus ts-${t.status.toLowerCase()}`}>
+                                                        {t.status}
+                                                    </span>
+                                                </td>
+                                                <td className="pr-6 text-gray-500 text-xs">
+                                                    {new Date(t.created_at).toLocaleDateString()}
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={5}>
+                                                    <div className="empty-well">
+                                                        <div className="ew-ico"><i className="bi bi-inbox"></i></div>
+                                                        <div className="ew-title">No Tickets Found</div>
+                                                        <div className="ew-sub">You haven't submitted any support requests yet.</div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-         </div>
-      </div>
-
-      {/* New Ticket Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0b2419]/60 backdrop-blur-xl animate-in fade-in duration-300">
-           <div className="bg-white w-full max-w-xl rounded-[48px] shadow-2xl overflow-hidden relative border border-white/20">
-              <div className="p-10 border-b border-emerald-900/5 bg-slate-50 flex items-center justify-between">
-                 <div>
-                    <h2 className="text-2xl font-black text-[#0b2419] tracking-tighter">Submit Help Desk Ticket</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Expected response within 24 hours.</p>
-                 </div>
-                 <button onClick={() => setShowModal(false)} className="w-10 h-10 rounded-full hover:bg-white text-slate-400 flex items-center justify-center transition-all shadow-sm">
-                    <Plus size={20} className="rotate-45" />
-                 </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="p-10 space-y-6 bg-white">
-                 {msg.text && (
-                    <div className={cn(
-                        "p-4 rounded-2xl flex items-center gap-3 border",
-                        msg.type === 'success' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-red-50 text-red-600 border-red-100"
-                    )}>
-                       {msg.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                       <span className="text-[11px] font-black uppercase tracking-widest">{msg.text}</span>
-                    </div>
-                 )}
-
-                 <div className="grid grid-cols-2 gap-6">
-                    <div>
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block pl-2">Category</label>
-                       <select 
-                         title="Category"
-                         className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 text-xs font-black focus:ring-2 focus:ring-emerald-500/10"
-                         value={form.category}
-                         onChange={e => setForm({...form, category: e.target.value})}
-                       >
-                          <option value="general">General Inquiry</option>
-                          <option value="technical">Technical Issue</option>
-                          <option value="billing">Billing/Withdrawal</option>
-                          <option value="loans">Loan Issues</option>
-                       </select>
-                    </div>
-                    <div>
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block pl-2">Subject</label>
-                        <input 
-                          type="text" 
-                          className="w-full h-14 bg-slate-50 border-none rounded-2xl px-4 text-xs font-black placeholder:text-slate-200"
-                          placeholder="e.g. Loan Withdrawal Delay"
-                          required
-                          value={form.subject}
-                          onChange={e => setForm({...form, subject: e.target.value})}
-                        />
-                    </div>
-                 </div>
-
-                 <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 block pl-2">Detailed Message</label>
-                    <textarea 
-                      className="w-full h-40 bg-slate-50 border-none rounded-3xl p-6 text-xs font-black placeholder:text-slate-200 resize-none"
-                      placeholder="Please explain your issue in detail..."
-                      required
-                      value={form.message}
-                      onChange={e => setForm({...form, message: e.target.value})}
-                    />
-                 </div>
-
-                 <div className="pt-4 flex items-center gap-4">
-                    <button 
-                      type="submit" 
-                      disabled={submitting}
-                      className="flex-1 h-14 bg-[#0b2419] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
-                    >
-                       {submitting ? 'Submitting...' : 'Submit Request Ticket'}
-                    </button>
-                 </div>
-              </form>
-           </div>
         </div>
-      )}
-
-    </div>
-  );
+    );
 }
