@@ -63,14 +63,14 @@ export function Sidebar() {
     localStorage.setItem('sb_collapsed', next ? '1' : '0');
   };
 
-  if (!mounted) return <div className="w-64 h-screen bg-white" />;
+  if (!mounted) return <div className="w-64 h-screen bg-[var(--bg-surface)]" />;
 
   return (
     <>
       <button 
         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         className={cn(
-          "fixed top-5 z-[60] w-8 h-8 rounded-lg bg-white border border-emerald-900/10 shadow-lg flex items-center justify-center text-emerald-900 transition-all duration-300 hover:bg-emerald-50",
+          "fixed top-5 z-[60] w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg flex items-center justify-center text-[var(--text-main)] transition-all duration-300 hover:bg-[var(--brand-forest)] hover:text-[var(--brand-lime)]",
           isCollapsed ? "left-[58px]" : "left-[250px]"
         )}
       >
@@ -79,14 +79,14 @@ export function Sidebar() {
 
       <aside 
         className={cn(
-          "fixed top-0 left-0 h-screen z-50 bg-white border-r border-emerald-900/5 flex flex-col transition-all duration-300 shadow-[2px_0_30px_rgba(0,0,0,0.02)]",
+          "fixed top-0 left-0 h-screen z-50 bg-[var(--bg-surface)] border-r border-[var(--border-color)] flex flex-col transition-all duration-300 shadow-[2px_0_30px_rgba(0,0,0,0.02)]",
           isCollapsed ? "w-20" : "w-[268px]"
         )}
       >
         {/* Brand */}
-        <div className="h-[72px] flex items-center px-4 border-b border-emerald-900/5 shrink-0">
+        <div className="h-[72px] flex items-center px-4 border-b border-[var(--border-color)] shrink-0">
           <Link href="/admin/dashboard" className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 bg-[#0b2419] rounded-xl flex items-center justify-center p-2.5 shrink-0 shadow-xl shadow-emerald-950/20">
+            <div className="w-10 h-10 bg-[#0F392B] rounded-xl flex items-center justify-center p-2.5 shrink-0 shadow-xl shadow-emerald-950/20">
                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter invert brightness-0 invert" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'} />
             </div>
             {!isCollapsed && (
@@ -95,8 +95,8 @@ export function Sidebar() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col"
               >
-                <span className="text-[13px] font-extrabold text-[#0b2419] leading-none tracking-tight">UMOJA SACCO</span>
-                <span className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-[1.5px] mt-1">Admin Portal</span>
+                <span className="text-[13px] font-extrabold text-[var(--text-main)] leading-none tracking-tight">UMOJA SACCO</span>
+                <span className="text-[9px] font-bold text-[#D0F764] uppercase tracking-[1.5px] mt-1">Admin Portal</span>
               </motion.div>
             )}
           </Link>
@@ -108,8 +108,8 @@ export function Sidebar() {
             <div key={gIdx} className="mb-6">
               {!isCollapsed && (
                 <div className="flex items-center gap-3 px-3 mb-3">
-                  <span className="text-[10px] font-black text-emerald-900/20 uppercase tracking-[2px] whitespace-nowrap">{group.group}</span>
-                  <div className="h-px bg-emerald-900/5 flex-1" />
+                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[2px] whitespace-nowrap">{group.group}</span>
+                  <div className="h-px bg-[var(--border-color)] opacity-20 flex-1" />
                 </div>
               )}
               <div className="space-y-1">
@@ -122,19 +122,19 @@ export function Sidebar() {
                       className={cn(
                         "group relative flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200",
                         isActive 
-                          ? "bg-emerald-50 text-[#0b2419] font-bold" 
-                          : "text-emerald-900/40 hover:bg-slate-50 hover:text-[#0b2419]"
+                          ? "bg-[var(--brand-forest)]/10 text-[var(--text-main)] font-bold" 
+                          : "text-[var(--text-muted)] hover:bg-[var(--brand-forest)]/5 hover:text-[var(--text-main)]"
                       )}
                     >
                       {isActive && (
                         <motion.div 
                           layoutId="active-nav"
-                          className="absolute left-0 top-2 bottom-2 w-1 bg-[#0b2419] rounded-full"
+                          className="absolute left-0 top-2 bottom-2 w-1 bg-[var(--brand-lime)] rounded-full"
                         />
                       )}
                       <div className={cn(
                         "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200",
-                        isActive ? "bg-[#0b2419] text-lime-400" : "bg-transparent text-inherit"
+                        isActive ? "bg-[var(--brand-forest)] text-[var(--brand-lime)] shadow-lg shadow-emerald-500/20" : "bg-transparent text-inherit"
                       )}>
                         <item.icon size={18} />
                       </div>
@@ -150,12 +150,12 @@ export function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-emerald-900/5">
+        <div className="p-3 border-t border-[var(--border-color)]">
           <button className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 font-bold hover:bg-red-50 transition-all duration-200",
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 font-bold hover:bg-red-500/10 transition-all duration-200",
             isCollapsed && "justify-center"
           )}>
-            <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
                <LogOut size={18} />
             </div>
             {!isCollapsed && <span className="text-sm">Sign Out</span>}

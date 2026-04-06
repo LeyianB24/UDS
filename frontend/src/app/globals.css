@@ -22,22 +22,23 @@
 
   --background: var(--bg-primary);
   --foreground: var(--text-main);
+  --font-jakarta: var(--font-plus-jakarta-sans);
 }
 
 [data-bs-theme="dark"] {
-  --bg-primary:        #0b1210;
-  --bg-surface:        #13241f;
+  --bg-primary:        #000000;
+  --bg-surface:        #0a0a0a;
   --text-main:         #F9FAFB;
   --text-muted:        #9CA3AF;
   --border-color:      #1F2937;
+  --brand-forest:      #D0F764; /* Invert forest branding in black mode for high-contrast */
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  /* Do NOT set overflow: hidden or height: 100% — breaks scrolling */
 }
 
 /* Replicating Legacy Stat Card */
