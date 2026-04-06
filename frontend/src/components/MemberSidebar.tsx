@@ -112,6 +112,7 @@ export function MemberSidebar() {
                         {[
                             { lbl: 'Pay Via M-Pesa', href: '/member/mpesa', ico: 'bi-phone-vibrate-fill' },
                             { lbl: 'Withdraw Funds', href: '/member/withdraw', ico: 'bi-wallet2' },
+                            { lbl: 'Messages', href: '/member/messages', ico: 'bi-chat-right-dots-fill' },
                             { lbl: 'All Transactions', href: '/member/transactions', ico: 'bi-arrow-left-right' },
                             { lbl: 'Notifications', href: '/member/notifications', ico: 'bi-bell-fill' },
                         ].map((m, i) => (
@@ -132,14 +133,14 @@ export function MemberSidebar() {
                             </Link>
                         ))}
 
-                        {/* Support Widget */}
+                        {/* Support Widget - Refined for Messaging Integration */}
                         {!isCollapsed && (
                             <div className="hd-support-widget">
                                 <div className="sw-dots"></div>
                                 <h6>Need Help?</h6>
-                                <p>Our support team is ready to assist you.</p>
-                                <Link href="/member/support" className="hd-support-btn">
-                                    <i className="bi bi-headset"></i> Open Ticket
+                                <p>Talk to our concierge for instant assistance.</p>
+                                <Link href="/member/messages" className="hd-support-btn">
+                                    <i className="bi bi-headset"></i> Instant Chat
                                 </Link>
                             </div>
                         )}

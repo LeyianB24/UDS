@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 const adminLinks = [
   { group: "General", items: [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Support Dispatch', href: '/admin/messages', icon: MessageSquare },
   ]},
   { group: "Member Management", items: [
     { name: 'Member Onboarding', href: '/admin/onboarding', icon: UserPlus },
