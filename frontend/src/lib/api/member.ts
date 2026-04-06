@@ -64,8 +64,39 @@ export interface LoanData {
     }[];
 }
 
+export interface TransactionData {
+    transactions: {
+        transaction_id: number;
+        created_at: string;
+        transaction_type: string;
+        amount: number;
+        notes: string;
+        reference_no: string;
+        related_table: string;
+    }[];
+    totals: {
+        category: string;
+        count: number;
+    }[];
+}
+
 export const MemberApi = {
     getSavings: () => apiFetch<{status: string, data: SavingsData}>('/api/member/savings').then(res => res.data),
     getShares: () => apiFetch<{status: string, data: SharesData}>('/api/member/shares').then(res => res.data),
     getLoans: () => apiFetch<{status: string, data: LoanData}>('/api/member/loans').then(res => res.data),
+    getTransactions: (type: string = 'all', limit: number = 50) => 
+        apiFetch<{status: string, data: TransactionData}>(`/api/member/transactions?type=${type}&limit=${limit}`).then(res => res.data),
+    downloadStatement: async (params: { start_date: string, end_date: string, report_type: string, format: string }) => {
+        const formData = new FormData();
+        Object.entries(params).forEach(([key, val]) => formData.append(key, val));
+        
+        // Use a direct axios call for blob handling
+        const response = await fetch('/api/member/statements/generate', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) throw new Error('Statement generation failed');
+        return await response.blob();
+    }
 };

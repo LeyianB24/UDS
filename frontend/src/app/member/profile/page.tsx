@@ -19,6 +19,7 @@ import {
     FileText, 
     UploadCloud, 
     ArrowLeft,
+    ArrowRight,
     ChevronRight,
     Lock,
     Users,
@@ -273,7 +274,7 @@ export default function ProfilePage() {
                                 {flash.type === 'ok' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
                                 <div className="text-sm font-bold">{flash.msg}</div>
                             </div>
-                            <button onClick={() => setFlash(null)} className="opacity-40 hover:opacity-100">
+                            <button onClick={() => setFlash(null)} aria-label="Close notification" className="opacity-40 hover:opacity-100 p-2">
                                 <X size={20} />
                             </button>
                         </motion.div>
