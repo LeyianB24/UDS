@@ -1,28 +1,73 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Wallet, 
+    Plus, 
+    ArrowRight, 
+    Info, 
+    PieChart, 
+    ShieldCheck, 
+    Clock, 
+    Download, 
+    ChevronRight,
+    Search,
+    X,
+    TrendingUp,
+    AlertCircle,
+    ArrowUpRight,
+    Smartphone,
+    CreditCard
+} from 'lucide-react';
 import { MemberApi, LoanData } from '@/lib/api/member';
-import './loans.css';
+import { cn } from '@/lib/utils';
+
+// floatUp animation variant
+const floatUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
+};
+
+const stagger = {
+    animate: {
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
 
 export default function LoansPage() {
     const [data, setData] = useState<LoanData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Modal state interactions
+    // Modal state for quick apply (matching original functionality)
+    const [showApplyModal, setShowApplyModal] = useState(false);
     const [modalAmount, setModalAmount] = useState<number>(0);
     const [modalMonths, setModalMonths] = useState<number>(12);
+    const [loanType, setLoanType] = useState('emergency');
+
+    // Modal state for wallet repayment
+    const [showRepayModal, setShowRepayModal] = useState(false);
+    const [repayAmount, setRepayAmount] = useState<number>(0);
 
     useEffect(() => {
         MemberApi.getLoans()
-            .then(res => setData(res))
+            .then(res => {
+                setData(res);
+                if (res.active_loan) {
+                    setRepayAmount(res.active_loan.current_balance);
+                }
+            })
             .finally(() => setLoading(false));
     }, []);
 
     if (loading || !data) {
         return (
-            <div className="d-flex align-items-center justify-content-center min-vh-100">
-                <div className="spinner-border text-success" role="status"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-12 h-12 border-4 border-[#0b2419]/10 border-t-[#a3e635] rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -30,7 +75,7 @@ export default function LoansPage() {
     const { active_loan, pending_loan, limit, wallet_balance, total_savings, history } = data;
     const is_overdue = active_loan ? (new Date(active_loan.next_repayment_date).getTime() < Date.now()) : false;
 
-    // Apply calculator
+    // Apply calculator logic
     const calcRate = 0.12;
     let modalPercent = (modalAmount / limit) * 100;
     if (modalPercent > 100) modalPercent = 100;
@@ -39,367 +84,533 @@ export default function LoansPage() {
     const modalTotal = modalAmount + modalInterest;
 
     return (
-        <div className="p-4 p-lg-5">
-            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+        <motion.div 
+            initial="initial"
+            animate="animate"
+            variants={stagger}
+            className="p-6 lg:p-10 max-w-7xl mx-auto"
+        >
+            {/* Header */}
+            <motion.div variants={floatUp} className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
                 <div>
-                    <h2 className="fw-bold mb-1">Loan Portfolio</h2>
-                    <p className="text-secondary mb-0">Manage your finances and track repayment progress.</p>
+                    <h1 className="text-3xl font-black text-[#0b2419] tracking-tight mb-2">Loan Portfolio</h1>
+                    <p className="text-slate-500 font-medium">Manage your debts and leverage your borrowing power.</p>
                 </div>
                 
-                <div className="d-flex gap-2">
+                <div className="flex flex-wrap gap-3">
+                    {wallet_balance > 0 && (
+                        <Link 
+                            href="/member/withdraw?type=loans&source=loans" 
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#0b2419] text-white rounded-2xl font-bold hover:bg-[#154330] transition-all shadow-lg hover:shadow-[#0b2419]/20"
+                        >
+                            <Wallet size={18} />
+                            <span>Withdraw Funds</span>
+                        </Link>
+                    )}
+                    
                     {active_loan || pending_loan ? (
-                        <>
-                            {wallet_balance > 0 && (
-                                <Link href="/member/withdraw?type=loans&source=loans" className="btn btn-dark fw-bold px-4 py-3 rounded-4 shadow-sm">
-                                    <i className="bi bi-wallet2 me-2"></i> Withdraw Funds
-                                </Link>
-                            )}
-                            <button className="btn btn-light border text-secondary fw-bold px-4 py-3 rounded-4" style={{ opacity: 0.8, cursor: 'not-allowed' }}>
-                                <i className="bi bi-lock-fill me-2"></i> Limit Reached
-                            </button>
-                        </>
+                        <button 
+                            disabled
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl font-bold cursor-not-allowed"
+                        >
+                            <Plus size={18} />
+                            <span>Limit Reached</span>
+                        </button>
                     ) : (
-                        <>
-                            {wallet_balance > 0 && (
-                                <Link href="/member/withdraw?type=loans&source=loans" className="btn btn-dark fw-bold px-4 py-3 rounded-4 shadow-sm">
-                                    <i className="bi bi-wallet2 me-2"></i> Withdraw Funds
-                                </Link>
-                            )}
-                            <button className="btn btn-lime shadow-lg py-3 rounded-4" data-bs-toggle="modal" data-bs-target="#applyLoanModal">
-                                <i className="bi bi-plus-lg me-2"></i> Apply for Loan
-                            </button>
-                        </>
+                        <button 
+                            onClick={() => setShowApplyModal(true)}
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#a3e635] text-[#0b2419] rounded-2xl font-bold hover:bg-[#bceb3b] transition-all shadow-lg shadow-[#a3e635]/30 hover:scale-[1.02]"
+                        >
+                            <Plus size={18} />
+                            <span>Apply for Loan</span>
+                        </button>
                     )}
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="row g-4">
-                <div className="col-xl-8">
-                    {pending_loan && (
-                        <div className="alert bg-warning bg-opacity-10 border-warning border-opacity-25 rounded-4 d-flex align-items-center p-4 mb-4">
-                            <div className="icon-box bg-warning bg-opacity-25 text-warning-emphasis me-3">
-                                <i className="bi bi-hourglass-split"></i>
-                            </div>
-                            <div>
-                                <h6 className="fw-bold text-warning-emphasis mb-1">Application In Review</h6>
-                                <span className="small text-secondary">Your request for <strong>KES {pending_loan.amount.toLocaleString()}</strong> is currently status: <strong className="text-capitalize">{pending_loan.status}</strong>.</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {active_loan && is_overdue && (
-                        <div className="alert bg-danger bg-opacity-10 border-danger border-opacity-25 rounded-4 d-flex align-items-center p-4 mb-4">
-                            <div className="icon-box bg-danger bg-opacity-25 text-danger me-3" style={{ width: 48, height: 48, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <i className="bi bi-exclamation-triangle-fill fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 className="fw-bold text-danger mb-1">Overdue Repayment Detected</h6>
-                                <p className="small text-secondary mb-0">Your loan repayment was due on <strong>{new Date(active_loan.next_repayment_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</strong>. Please make a repayment to avoid further daily fines.</p>
-                            </div>
-                        </div>
-                    )}
-
-                    {active_loan ? (
-                        <div className="card-forest p-4 p-lg-5 mb-4 shadow-lg">
-                            <div className="d-flex justify-content-between align-items-start mb-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Main Content Area */}
+                <div className="lg:col-span-8 flex flex-col gap-8">
+                    
+                    {/* Status Alerts */}
+                    <AnimatePresence>
+                        {pending_loan && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="bg-amber-50 border border-amber-100 rounded-[24px] p-6 flex gap-4 items-start"
+                            >
+                                <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0">
+                                    <Clock size={20} />
+                                </div>
                                 <div>
-                                    <div className="badge bg-white bg-opacity-10 text-white border border-white border-opacity-25 rounded-pill px-3 py-2 mb-3 backdrop-blur" style={{ backdropFilter: 'blur(4px)' }}>
-                                        Active Loan #{active_loan.loan_id}
-                                    </div>
-                                    <h1 className="display-4 fw-bold mb-0">KES {active_loan.current_balance.toLocaleString()}</h1>
-                                    <span className="label-text">Outstanding Balance</span>
+                                    <h4 className="font-bold text-amber-900 mb-1">Application In Review</h4>
+                                    <p className="text-sm text-amber-700/80 leading-relaxed">
+                                        Your request for <span className="font-extrabold text-amber-900">KES {pending_loan.amount.toLocaleString()}</span> is currently <span className="capitalize font-bold">{pending_loan.status}</span>. We'll notify you once processed.
+                                    </p>
                                 </div>
-                                <div className="d-none d-sm-flex gap-4 text-end">
+                            </motion.div>
+                        )}
+
+                        {active_loan && is_overdue && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="bg-red-50 border border-red-100 rounded-[24px] p-6 flex gap-4 items-start"
+                            >
+                                <div className="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0">
+                                    <AlertCircle size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-red-900 mb-1">Overdue Repayment Detected</h4>
+                                    <p className="text-sm text-red-700/80 leading-relaxed">
+                                        Payment was due on <span className="font-bold">{new Date(active_loan.next_repayment_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })}</span>. Please settle to avoid penalties.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Hero: Active Loan or Eligibility */}
+                    <motion.div variants={floatUp}>
+                        {active_loan ? (
+                            <div className="bg-[#0b2419] rounded-[40px] p-8 lg:p-12 relative overflow-hidden text-white shadow-2xl">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-[#a3e635] opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-[0.03] rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                                
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 relative z-10">
                                     <div>
-                                        <span className="label-text d-block mb-1">Installment / Mo</span>
-                                        <span className="fw-bold fs-5">KES {Math.round(active_loan.total_payable / 12).toLocaleString()}</span>
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 border border-white/20 rounded-full text-[10px] font-black uppercase tracking-widest text-[#a3e635] mb-4">
+                                            Active Loan #{active_loan.loan_id}
+                                        </div>
+                                        <div className="text-5xl lg:text-6xl font-black tracking-tighter mb-1">
+                                            <span className="text-xl mr-2 text-[#a3e635]/60">KES</span>
+                                            {active_loan.current_balance.toLocaleString()}
+                                        </div>
+                                        <div className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] ml-1">Outstanding Balance</div>
                                     </div>
-                                    <div>
-                                        <span className="label-text d-block mb-1">Interest Rate</span>
-                                        <span className="fw-bold fs-5">{active_loan.interest_rate}% p.a</span>
+                                    <div className="hidden sm:grid grid-cols-2 gap-6 text-right">
+                                        <div>
+                                            <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] mb-1">Monthly Installment</div>
+                                            <div className="text-lg font-bold">KES {Math.round(active_loan.total_payable / 12).toLocaleString()}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] mb-1">Interest Rate</div>
+                                            <div className="text-lg font-bold text-[#a3e635]">{active_loan.interest_rate}% p.a</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end relative z-10">
+                                    <div className="lg:col-span-7">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Repayment Progress</span>
+                                            <span className="text-sm font-black text-[#a3e635]">{Math.round(active_loan.progress_percent)}%</span>
+                                        </div>
+                                        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                            <motion.div 
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${active_loan.progress_percent}%` }}
+                                                transition={{ duration: 1, ease: "easeOut" }}
+                                                className="h-full bg-[#a3e635] shadow-[0_0_10px_rgba(163,230,53,0.5)]"
+                                            />
+                                        </div>
+                                        <div className="mt-4 flex flex-col gap-1.5">
+                                            <div className="text-[10px] font-bold text-white/20 uppercase tracking-wider">
+                                                Guarantors: <span className="text-white/60">{active_loan.guarantors && active_loan.guarantors.length > 0 ? active_loan.guarantors.join(' & ') : 'None Linked'}</span>
+                                            </div>
+                                            <div className="text-[10px] font-bold text-white/20 uppercase tracking-wider">
+                                                Total Paid: <span className="text-[#a3e635]/80">KES {(active_loan.total_payable - active_loan.current_balance).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3">
+                                        <Link 
+                                            href={`/member/loans/repay?loan_id=${active_loan.loan_id}`}
+                                            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#a3e635] text-[#0b2419] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#bceb3b] transition-all hover:-translate-y-1 shadow-xl shadow-[#a3e635]/20"
+                                        >
+                                            <Smartphone size={16} />
+                                            <span>M-Pesa PAY</span>
+                                        </Link>
+                                        <button 
+                                            onClick={() => setShowRepayModal(true)}
+                                            className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+                                        >
+                                            <Wallet size={16} className="text-[#a3e635]" />
+                                            <span>From Wallet</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="row align-items-end">
-                                <div className="col-lg-7 mb-4 mb-lg-0">
-                                    <div className="d-flex justify-content-between text-white small fw-bold mb-2">
-                                        <span>Repayment Progress</span>
-                                        <span>{Math.round(active_loan.progress_percent)}%</span>
-                                    </div>
-                                    <div className="progress" style={{ height: 8, background: 'rgba(255,255,255,0.2)', borderRadius: 10 }}>
-                                        <div className="progress-bar bg-warning" role="progressbar" style={{ width: `${active_loan.progress_percent}%` }}></div>
-                                    </div>
-                                    <div className="mt-3 text-white opacity-75 small text-uppercase" style={{ letterSpacing: 1 }}>
-                                        Guarantors: {active_loan.guarantors && active_loan.guarantors.length > 0 ? active_loan.guarantors.join(', ') : 'None'}
-                                    </div>
-                                    <div className="mt-2 text-white opacity-75 small">
-                                        Paid: KES {(active_loan.total_payable - active_loan.current_balance).toLocaleString()} of KES {active_loan.total_payable.toLocaleString()}
-                                    </div>
-                                </div>
-                                <div className="col-lg-5">
-                                    <div className="row g-2 mt-2">
-                                        <div className="col-sm-6">
-                                            <Link href={`/member/mpesa_request?type=loan_repayment&loan_id=${active_loan.loan_id}`} className="btn btn-lime w-100 py-3 shadow-sm d-flex justify-content-center align-items-center">
-                                                <i className="bi bi-phone me-2"></i> M-Pesa
-                                            </Link>
-                                        </div>
-                                        <div className="col-sm-6">
-                                            <button className="btn btn-outline-light w-100 py-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#repayWalletModal">
-                                                <i className="bi bi-wallet2 me-2" style={{color: '#28a745'}}></i> Wallet
+                        ) : (
+                            <div className="bg-white border border-slate-100 rounded-[40px] p-10 lg:p-16 text-center shadow-sm relative overflow-hidden">
+                                <div className="absolute inset-0 bg-[#a3e635]/[0.02] pointer-events-none"></div>
+                                <div className="relative z-10 max-w-lg mx-auto flex flex-col items-center">
+                                    {total_savings > 0 ? (
+                                        <>
+                                            <div className="w-20 h-20 bg-[#a3e635] text-[#0b2419] rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-[#a3e635]/20">
+                                                <ShieldCheck size={40} />
+                                            </div>
+                                            <h2 className="text-3xl font-black text-[#0b2419] tracking-tight mb-4">Elite Eligibility Unlocked</h2>
+                                            <p className="text-slate-500 font-medium leading-relaxed mb-8">
+                                                You currently have no active debts. Based on your savings pattern, you qualify for an instant disbursement up to your triple-multiplier limit.
+                                            </p>
+                                            <div className="px-8 py-4 bg-slate-50 rounded-2xl border border-slate-100 mb-8 w-full">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Instant Access Limit</div>
+                                                <div className="text-4xl font-black text-[#0b2419]">KES {limit.toLocaleString()}</div>
+                                            </div>
+                                            <button 
+                                                onClick={() => setShowApplyModal(true)}
+                                                className="group inline-flex items-center gap-3 px-10 py-5 bg-[#0b2419] text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-[#154330] transition-all hover:scale-105 shadow-2xl"
+                                            >
+                                                <span>Initialize Application</span>
+                                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                                             </button>
-                                        </div>
-                                    </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-3xl flex items-center justify-center mb-6">
+                                                <TrendingUp size={40} />
+                                            </div>
+                                            <h2 className="text-3xl font-black text-[#0b2419] tracking-tight mb-4">Foundation Growth Required</h2>
+                                            <p className="text-slate-500 font-medium leading-relaxed mb-8">
+                                                To unlock borrowing capabilities, you need an active savings pool. Start saving today and multiply your capital access by up to 3x.
+                                            </p>
+                                            <Link 
+                                                href="/member/savings"
+                                                className="inline-flex items-center gap-3 px-10 py-5 bg-[#0b2419] text-white rounded-3xl font-black text-sm uppercase tracking-widest hover:bg-[#154330] transition-all hover:scale-105 shadow-2xl"
+                                            >
+                                                <span>Open Savings Account</span>
+                                                <ArrowUpRight size={18} />
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-                    ) : !pending_loan && (
-                        <div className="card-clean p-5 text-center mb-4 h-100 d-flex flex-column justify-content-center align-items-center" style={{ borderStyle: 'dashed' }}>
-                            {total_savings > 0 ? (
-                                <>
-                                    <div className="icon-box lime rounded-circle mb-3" style={{ width: 80, height: 80, fontSize: '2rem' }}>
-                                        <i className="bi bi-shield-check"></i>
-                                    </div>
-                                    <h3 className="fw-bold">You are Eligible!</h3>
-                                    <p className="text-secondary mb-4 col-lg-8 mx-auto">You currently have no active debts. Based on your savings, you qualify for an instant loan up to the limit below.</p>
-                                    <h2 className="text-success fw-bold">KES {limit.toLocaleString()}</h2>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="icon-box bg-light text-muted rounded-circle mb-3" style={{ width: 80, height: 80, fontSize: '2rem' }}>
-                                        <i className="bi bi-clock-history"></i>
-                                    </div>
-                                    <h3 className="fw-bold">Build Your Savings</h3>
-                                    <p className="text-secondary mb-4 col-lg-8 mx-auto">To qualify for a loan, you need to have active savings. Start saving today to unlock borrowing power up to 3x your balance.</p>
-                                    <Link href="/member/mpesa_request?type=savings" className="btn btn-dark rounded-pill px-5 py-3">Start Saving Now</Link>
-                                </>
-                            )}
-                        </div>
-                    )}
+                        )}
+                    </motion.div>
 
-                    <div className="card-clean mb-4">
-                        <div className="p-4 border-bottom border-light d-flex justify-content-between align-items-center">
-                            <h6 className="fw-bold mb-0">Recent History</h6>
-                            <div className="dropdown">
-                                <button className="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">
-                                    <i className="bi bi-download me-1"></i> Export
-                                </button>
-                                <ul className="dropdown-menu shadow">
-                                    <li><a className="dropdown-item" href="#"><i className="bi bi-file-pdf text-danger me-2"></i>Export PDF</a></li>
-                                    <li><a className="dropdown-item" href="#"><i className="bi bi-file-excel text-success me-2"></i>Export Excel</a></li>
-                                    <li><a className="dropdown-item" href="#"><i className="bi bi-printer text-primary me-2"></i>Print History</a></li>
-                                </ul>
-                            </div>
+                    {/* Transaction History Section */}
+                    <motion.div variants={floatUp} className="bg-white border border-slate-100 rounded-[32px] overflow-hidden shadow-sm">
+                        <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                            <h3 className="font-bold text-[#0b2419]">Loan History</h3>
+                            <button className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#0b2419] hover:text-[#1d6044] transition-colors">
+                                <Download size={14} />
+                                <span>Export (PDF/CSV)</span>
+                            </button>
                         </div>
-                        <div className="table-responsive">
-                            <table className="table-premium mb-0">
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr>
-                                        <th className="ps-4">Date</th>
-                                        <th>Loan Type</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                        <th className="text-end pe-4">Action</th>
+                                    <tr className="bg-slate-50/30">
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date / Type</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Principal Amount</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status / Outcome</th>
+                                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Reference</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {history.length === 0 ? (
-                                        <tr><td colSpan={5} className="text-center py-5 text-muted">No loan history found.</td></tr>
-                                    ) : history.map((h, i) => {
-                                        let statusClass = 'status-pending';
-                                        switch (h.status) {
-                                            case 'completed': statusClass = 'status-completed'; break;
-                                            case 'disbursed': case 'active': statusClass = 'status-disbursed'; break;
-                                            case 'approved': statusClass = 'status-approved'; break;
-                                            case 'rejected': statusClass = 'status-rejected'; break;
-                                        }
-
-                                        return (
-                                            <tr key={i}>
-                                                <td className="ps-4 fw-bold">{new Date(h.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                                                <td className="text-capitalize text-secondary">{h.loan_type.replace(/_/g, ' ')}</td>
-                                                <td className="fw-bold">KES {h.amount.toLocaleString()}</td>
-                                                <td><span className={`badge-pill ${statusClass}`}>{h.status}</span></td>
-                                                <td className="text-end pe-4">
-                                                    <button className="btn btn-sm btn-light border rounded-circle" style={{ width: 32, height: 32 }}><i className="bi bi-chevron-right"></i></button>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
+                                        <tr>
+                                            <td colSpan={4} className="px-8 py-20 text-center text-slate-400 italic">No loan history records identified.</td>
+                                        </tr>
+                                    ) : history.map((h, i) => (
+                                        <tr key={i} className="group hover:bg-slate-50/80 transition-colors border-b border-slate-50 last:border-0 cursor-pointer">
+                                            <td className="px-8 py-6">
+                                                <div className="font-bold text-[#0b2419] block mb-1">
+                                                    {new Date(h.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </div>
+                                                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">{h.loan_type.replace(/_/g, ' ')}</div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className="font-black text-[#0b2419] text-base">KES {h.amount.toLocaleString()}</div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <div className={cn(
+                                                    "inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                                                    h.status === 'completed' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                                                    (h.status === 'disbursed' || h.status === 'active') ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                                                    h.status === 'approved' ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                                                    h.status === 'rejected' ? "bg-red-50 text-red-600 border border-red-100" : 
+                                                    "bg-amber-50 text-amber-600 border border-amber-100"
+                                                )}>
+                                                    <div className={cn(
+                                                        "w-1 h-1 rounded-full mr-1.5",
+                                                        h.status === 'completed' ? "bg-emerald-600" :
+                                                        (h.status === 'disbursed' || h.status === 'active') ? "bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" :
+                                                        h.status === 'approved' ? "bg-indigo-600" :
+                                                        h.status === 'rejected' ? "bg-red-600" : "bg-amber-600"
+                                                    )} />
+                                                    {h.status}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-right">
+                                                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 inline-flex items-center justify-center group-hover:bg-[#0b2419] group-hover:text-[#a3e635] transition-all">
+                                                    <ChevronRight size={16} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
 
-                <div className="col-xl-4">
-                    <div className="d-flex flex-column gap-4">
-                        <div className="card-clean p-4 border-lime" style={{ border: '2px solid var(--lime-accent)' }}>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="icon-box lime me-3">
-                                    <i className="bi bi-wallet2"></i>
-                                </div>
-                                <div>
-                                    <span className="text-secondary small fw-bold text-uppercase">Loan Wallet (Disbursed)</span>
-                                    <h5 className="fw-bold mb-0">KES {wallet_balance.toLocaleString()}</h5>
-                                </div>
+                {/* Sidebar Stats Area */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                    {/* Disbursed Wallet Card */}
+                    <motion.div variants={floatUp} className="bg-white border-2 border-[#a3e635] rounded-[32px] p-8 shadow-xl shadow-[#a3e635]/5 relative overflow-hidden group">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#a3e635]/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-14 h-14 bg-[#a3e635]/20 text-[#0b2419] rounded-2xl flex items-center justify-center shadow-inner">
+                                <Wallet size={24} />
                             </div>
-                            <div className="d-grid mt-3">
-                                <Link href="/member/withdraw?type=loans&source=loans" className="btn btn-lime py-2">
-                                    <i className="bi bi-cash-coin me-2"></i> Withdraw to M-Pesa
-                                </Link>
+                            <div>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Disbursed Wallet</span>
+                                <h3 className="text-2xl font-black text-[#0b2419]">KES {wallet_balance.toLocaleString()}</h3>
                             </div>
                         </div>
+                        <Link 
+                            href="/member/withdraw?type=loans&source=loans"
+                            className="w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#0b2419] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#154330] transition-all shadow-lg overflow-hidden group/btn"
+                        >
+                            <span className="relative z-10 flex items-center gap-2">
+                                <ArrowUpRight size={16} className="text-[#a3e635]" />
+                                <span>Move to M-Pesa</span>
+                            </span>
+                            <div className="absolute inset-0 bg-[#1d6044] translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                        </Link>
+                    </motion.div>
 
-                        <div className="card-clean p-4">
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="icon-box me-3">
-                                    <i className="bi bi-safe"></i>
-                                </div>
-                                <div>
-                                    <span className="text-secondary small fw-bold text-uppercase">Total Savings</span>
-                                    <h5 className="fw-bold mb-0">KES {total_savings.toLocaleString()}</h5>
-                                </div>
+                    {/* Limit Insight Card */}
+                    <motion.div variants={floatUp} className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-12 h-12 bg-slate-50 text-[#0b2419] rounded-2xl flex items-center justify-center border border-slate-100">
+                                <TrendingUp size={20} />
                             </div>
-                            <hr className="border-light opacity-50 my-2" />
-                            <div className="d-flex align-items-center mt-2">
-                                <div className="icon-box lime me-3">
-                                    <i className="bi bi-graph-up-arrow"></i>
-                                </div>
-                                <div>
-                                    <span className="text-secondary small fw-bold text-uppercase">Max Loan Limit (3x)</span>
-                                    <h5 className="fw-bold text-success mb-0">KES {limit.toLocaleString()}</h5>
-                                </div>
+                            <div>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Borrowing Capacity</span>
+                                <h3 className="text-xl font-black text-[#0b2419]">KES {limit.toLocaleString()}</h3>
                             </div>
                         </div>
+                        <div className="space-y-4 pt-2">
+                            <div className="flex justify-between items-center text-xs font-bold border-b border-slate-50 pb-3">
+                                <span className="text-slate-400 uppercase tracking-wider">Total Savings Pool</span>
+                                <span className="text-[#0b2419]">KES {total_savings.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-bold border-b border-slate-50 pb-3">
+                                <span className="text-slate-400 uppercase tracking-wider">Multiplier Factor</span>
+                                <span className="text-[#a3e635] font-black">3.0x Fixed</span>
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-bold">
+                                <span className="text-slate-400 uppercase tracking-wider">Utilization Rate</span>
+                                <span className="text-[#0b2419]">{active_loan ? Math.round((active_loan.amount / limit) * 100) : 0}%</span>
+                            </div>
+                        </div>
+                    </motion.div>
 
-                        <div className="card-clean text-white p-4" style={{ background: 'var(--forest-deep)' }}>
-                            <h5 className="fw-bold mb-3"><i className="bi bi-info-circle me-2 text-warning"></i>Quick Terms</h5>
-                            <ul className="list-unstyled mb-0 d-flex flex-column gap-3 small opacity-75">
-                                <li className="d-flex align-items-start">
-                                    <i className="bi bi-check-circle-fill text-warning me-2 mt-1"></i>
-                                    Interest rate is fixed at {active_loan ? active_loan.interest_rate : 12}% p.a on reducing balance.
-                                </li>
-                                <li className="d-flex align-items-start">
-                                    <i className="bi bi-check-circle-fill text-warning me-2 mt-1"></i>
-                                    Loans require active guarantors.
-                                </li>
-                                <li className="d-flex align-items-start">
-                                    <i className="bi bi-check-circle-fill text-warning me-2 mt-1"></i>
-                                    Processing takes 24-48 hours.
-                                </li>
-                            </ul>
+                    {/* Quick Rules / Info Card */}
+                    <motion.div variants={floatUp} className="bg-[#0b2419] rounded-[32px] p-8 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] rotate-12 pointer-events-none">
+                            <Info size={120} />
                         </div>
-                    </div>
+                        <h4 className="font-black text-xs uppercase tracking-widest text-[#a3e635] mb-6 flex items-center gap-2">
+                            <ShieldCheck size={14} />
+                            Sacco Guard Rules
+                        </h4>
+                        <ul className="space-y-4">
+                            {[
+                                `Standard interest is fixed at ${active_loan ? active_loan.interest_rate : 12}% per annum.`,
+                                "Defaulting impacts your guarantors' borrowing capacity.",
+                                "Repayment via M-Pesa is reconciled in &lt; 60 seconds.",
+                                "A processing fee of 1% applies to emergency disbursements."
+                            ].map((rule, idx) => (
+                                <li key={idx} className="flex gap-3 items-start text-[11px] font-bold text-white/50 leading-relaxed group">
+                                    <div className="w-1.5 h-1.5 bg-[#a3e635] rounded-full mt-1.5 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
+                                    <span>{rule}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
                 </div>
             </div>
 
-            {/* Modal: Apply Loan */}
-            <div className="modal fade" id="applyLoanModal" tabIndex={-1} aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content overflow-hidden">
-                        <div className="modal-header border-0 px-4 pt-4 pb-0">
-                            <div>
-                                <h5 className="modal-title fw-bold">New Application</h5>
-                                <p className="text-secondary small mb-0">Customize your loan details</p>
-                            </div>
-                            <button type="button" className="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div className="modal-body p-4">
-                            <div className="mb-4">
-                                <label className="form-label small fw-bold text-uppercase mb-3">
-                                    <span className="badge bg-dark text-white rounded-circle me-1" style={{ width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>1</span>
-                                    Loan Details
-                                </label>
-                                
-                                <div className="mb-3">
-                                    <div className="d-flex justify-content-between small fw-bold mb-1">
-                                        <span className="text-secondary">Limit Usage</span>
-                                        <span>{Math.round(modalPercent)}%</span>
+            {/* QUICK APPLY MODAL OVERLAY */}
+            <AnimatePresence>
+                {showApplyModal && (
+                    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowApplyModal(false)}
+                            className="absolute inset-0 bg-[#0b2419]/80 backdrop-blur-md"
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white rounded-[40px] w-full max-w-xl p-8 lg:p-12 shadow-[0_32px_128px_rgba(11,36,25,0.4)] relative z-10 overflow-hidden"
+                        >
+                            <button 
+                                onClick={() => setShowApplyModal(false)}
+                                className="absolute top-8 right-8 w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                            
+                            <h2 className="text-3xl font-black text-[#0b2419] tracking-tight mb-2">Loan Calculator</h2>
+                            <p className="text-slate-500 font-medium mb-10">Select your preferences to see instant estimates.</p>
+                            
+                            <div className="space-y-8">
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-end">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Principal Amount (KES)</label>
+                                        <div className={cn("text-2xl font-black", isExceeding ? 'text-red-500' : 'text-[#0b2419]')}>
+                                            {modalAmount.toLocaleString()}
+                                        </div>
                                     </div>
-                                    <div className="progress" style={{ height: 6 }}>
-                                        <div className={`progress-bar ${isExceeding ? 'bg-danger' : 'bg-success'}`} style={{ width: `${modalPercent}%` }}></div>
+                                    <input 
+                                        type="range" min="1000" max={limit * 1.2} step="1000"
+                                        value={modalAmount} onChange={e => setModalAmount(Number(e.target.value))}
+                                        className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-[#a3e635]"
+                                    />
+                                    <div className="flex justify-between text-[10px] font-bold text-slate-400 tracking-wider">
+                                        <span>MIN: KES 1,000</span>
+                                        <span className={isExceeding ? 'text-red-500 font-black' : ''}>LIMIT: KES {limit.toLocaleString()}</span>
                                     </div>
-                                    <div className="text-end text-muted small mt-1">Max: KES {limit.toLocaleString()}</div>
                                 </div>
 
-                                <div className="mb-3">
-                                    <label className="form-label small fw-bold text-uppercase text-secondary">Loan Category</label>
-                                    <select name="loan_type" className="form-select form-control-lg-custom">
-                                        <option value="emergency">Emergency Loan</option>
-                                        <option value="development">Development Loan</option>
-                                        <option value="education">Education / School Fees</option>
-                                    </select>
-                                </div>
-
-                                <div className="row g-3">
-                                    <div className="col-7">
-                                        <label className="form-label small fw-bold text-uppercase text-secondary">Amount (KES)</label>
-                                        <input type="number" value={modalAmount || ''} onChange={e => setModalAmount(parseFloat(e.target.value) || 0)} className={`form-control form-control-lg-custom ${isExceeding ? 'is-invalid' : ''}`} placeholder="0" />
-                                        {isExceeding && <div className="invalid-feedback fw-bold d-block">Amount exceeds your limit!</div>}
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Product</label>
+                                        <select 
+                                            value={loanType} onChange={e => setLoanType(e.target.value)}
+                                            className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-black text-[#0b2419] transition-all outline-none"
+                                        >
+                                            <option value="emergency">Emergency</option>
+                                            <option value="development">Development</option>
+                                            <option value="education">Education</option>
+                                        </select>
                                     </div>
-                                    <div className="col-5">
-                                        <label className="form-label small fw-bold text-uppercase text-secondary">Duration</label>
-                                        <select value={modalMonths} onChange={e => setModalMonths(parseInt(e.target.value))} className="form-select form-control-lg-custom">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3">Duration</label>
+                                        <select 
+                                            value={modalMonths} onChange={e => setModalMonths(Number(e.target.value))}
+                                            className="w-full h-14 bg-slate-50 border border-slate-100 rounded-2xl px-5 text-sm font-black text-[#0b2419] transition-all outline-none"
+                                        >
                                             <option value="3">3 Months</option>
                                             <option value="6">6 Months</option>
                                             <option value="12">12 Months</option>
                                         </select>
                                     </div>
                                 </div>
-                            </div>
-                            <div className="bg-light p-3 rounded-4 border" style={{ borderStyle: 'dashed' }}>
-                                <div className="d-flex justify-content-between small text-secondary mb-1">
-                                    <span>Interest Rating</span>
-                                    <span className="fw-bold">KES {Math.ceil(modalInterest).toLocaleString()}</span>
-                                </div>
-                                <hr className="my-2 opacity-25" />
-                                <div className="d-flex justify-content-between align-items-center">
-                                    <span className="fw-bold">Est. Total Payable</span>
-                                    <span className="fs-4 fw-bold text-success">KES {Math.ceil(modalTotal).toLocaleString()}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="modal-footer border-0 px-4 pb-4 pt-0">
-                            <button type="submit" disabled={isExceeding || modalAmount <= 0} className="btn btn-lime w-100 py-3 text-uppercase shadow-lg fw-bold" style={{ letterSpacing: 1 }} data-bs-dismiss="modal">
-                                Confirm & Apply <i className="bi bi-send-fill ms-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Modal: Repay Wallet */}
-            {active_loan && (
-            <div className="modal fade" id="repayWalletModal" tabIndex={-1}>
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content overflow-hidden">
-                        <div className="modal-header border-0 p-4 pb-0">
-                            <h5 className="fw-bold mb-0">Repay from Wallet</h5>
-                            <button type="button" className="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div className="modal-body p-4">
-                            <div className="p-4 rounded-4 mb-4 text-center bg-light">
-                                <small className="text-uppercase text-secondary fw-bold" style={{ letterSpacing: 1 }}>Available in Wallet</small>
-                                <h2 className="fw-bold mt-1">KES {wallet_balance.toLocaleString()}</h2>
-                            </div>
-                            <div className="mb-3">
-                                <label className="form-label small fw-bold text-uppercase text-secondary">Repayment Amount (KES)</label>
-                                <input type="number" className="form-control form-control-lg-custom" defaultValue={active_loan.current_balance} />
-                                <div className="mt-2 small text-muted">
-                                    Min: KES 10 | Outstanding: KES {active_loan.current_balance.toLocaleString()}
+                                <div className="p-6 bg-[#0b2419] rounded-[24px] text-white">
+                                    <div className="flex justify-between items-center mb-4 border-b border-white/5 pb-4">
+                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Est. Interest ({calcRate*100}%)</span>
+                                        <span className="font-black text-base text-[#a3e635]">+ KES {Math.ceil(modalInterest).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Total Repayable</span>
+                                        <span className="text-3xl font-black tracking-tighter">KES {Math.ceil(modalTotal).toLocaleString()}</span>
+                                    </div>
                                 </div>
+
+                                <Link 
+                                    href={`/member/loans/apply?type=${loanType}&amount=${modalAmount}&months=${modalMonths}`}
+                                    className={cn(
+                                        "w-full h-16 rounded-[22px] font-black text-sm uppercase tracking-widest flex items-center justify-center transition-all shadow-xl",
+                                        isExceeding || modalAmount <= 0 
+                                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none" 
+                                            : "bg-[#a3e635] text-[#0b2419] hover:bg-[#bceb3b] hover:scale-[1.02] active:scale-[0.98] shadow-[#a3e635]/20"
+                                    )}
+                                >
+                                    Proceed to Application
+                                </Link>
                             </div>
-                        </div>
-                        <div className="modal-footer border-0 p-4 pt-0">
-                            <button type="button" className="btn btn-success w-100 py-3 rounded-4 shadow-lg text-uppercase fw-bold" style={{ letterSpacing: 1 }} data-bs-dismiss="modal">
-                                Confirm Repayment
-                            </button>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            </div>
-            )}
-        </div>
+                )}
+
+                {/* REPAY FROM WALLET MODAL */}
+                {showRepayModal && (
+                    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowRepayModal(false)}
+                            className="absolute inset-0 bg-[#0b2419]/80 backdrop-blur-md"
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white rounded-[40px] w-full max-w-lg p-8 lg:p-12 shadow-[0_32px_128px_rgba(11,36,25,0.4)] relative z-10"
+                        >
+                            <button 
+                                onClick={() => setShowRepayModal(false)}
+                                className="absolute top-8 right-8 w-10 h-10 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                            
+                            <h2 className="text-3xl font-black text-[#0b2419] tracking-tight mb-2">Wallet Settlement</h2>
+                            <p className="text-slate-500 font-medium mb-10">Clear your balance using disbursed funds.</p>
+                            
+                            <div className="space-y-8">
+                                <div className="p-8 bg-slate-50 rounded-[28px] border border-slate-100 flex flex-col items-center">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Available in Wallet</span>
+                                    <h3 className="text-4xl font-black text-[#0b2419]">KES {wallet_balance.toLocaleString()}</h3>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center px-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Repayment Amount</label>
+                                        <button 
+                                            onClick={() => active_loan && setRepayAmount(active_loan.current_balance)}
+                                            className="text-[10px] font-black text-[#0b2419] hover:text-[#1d6044] transition-colors bg-[#a3e635]/20 px-3 py-1 rounded-full uppercase tracking-widest"
+                                        >
+                                            Full Settle
+                                        </button>
+                                    </div>
+                                    <div className="relative group">
+                                        <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-xl text-slate-300">KES</span>
+                                        <input 
+                                            type="number" 
+                                            className="w-full h-20 bg-slate-50/50 border border-slate-100 rounded-3xl pl-20 pr-6 text-3xl font-black text-[#0b2419] focus:bg-white focus:ring-8 focus:ring-[#a3e635]/10 focus:border-[#a3e635]/30 transition-all outline-none tracking-tighter"
+                                            value={repayAmount}
+                                            onChange={e => setRepayAmount(Number(e.target.value))}
+                                            max={wallet_balance}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-slate-300 italic px-2">
+                                        Outstanding balance is KES {active_loan?.current_balance.toLocaleString()}.
+                                    </p>
+                                </div>
+
+                                <button 
+                                    disabled={repayAmount <= 0 || repayAmount > wallet_balance}
+                                    className={cn(
+                                        "w-full h-20 rounded-[28px] font-black text-lg uppercase tracking-[0.3em] flex items-center justify-center gap-4 transition-all shadow-2xl",
+                                        repayAmount <= 0 || repayAmount > wallet_balance
+                                            ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none"
+                                            : "bg-[#0b2419] text-[#a3e635] shadow-[#0b2419]/20 hover:scale-[1.02] active:scale-[0.95]"
+                                    )}
+                                >
+                                    <Smartphone size={24} />
+                                    <span>Execute Settlement</span>
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }
