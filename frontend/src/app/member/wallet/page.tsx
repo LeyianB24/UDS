@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import './wallet.css';
+
+import WithdrawView from './WithdrawView';
+import DepositView from './DepositView';
+import RegistrationPayView from './RegistrationPayView';
 
 interface WalletData {
     balance: number;
@@ -22,7 +27,10 @@ interface WalletData {
     }[];
 }
 
-export default function WalletPage() {
+function WalletContent() {
+    const searchParams = useSearchParams();
+    const action = searchParams.get('action');
+
     const [data, setData] = useState<WalletData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,8 +52,12 @@ export default function WalletPage() {
     }, []);
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        if (!action) loadData();
+    }, [loadData, action]);
+
+    if (action === 'withdraw') return <WithdrawView />;
+    if (action === 'deposit') return <DepositView />;
+    if (action === 'pay-registration') return <RegistrationPayView />;
 
     if (loading) {
         return (
@@ -169,5 +181,13 @@ export default function WalletPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function WalletPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a3e635]"></div></div>}>
+            <WalletContent />
+        </Suspense>
     );
 }

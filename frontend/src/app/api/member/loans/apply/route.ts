@@ -93,13 +93,25 @@ export async function POST(request: Request) {
         await connection.beginTransaction();
 
         try {
-            // 3. Insert Loan
-            const [loanRes]: any = await connection.execute(
-                `INSERT INTO loans (member_id, loan_type, amount, interest_rate, duration_months, status, application_date, notes, total_payable, current_balance) 
-                 VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?, ?, ?)`,
-                [userId, loan_type, amount, interestRate, duration_months, notes, totalPayable, totalPayable]
-            );
-            const loanId = loanRes.insertId;
+            // 3. Insert Loan (Defensive reference_no)
+            const refNo = `L-${Date.now()}`;
+            let loanId;
+            try {
+                const [loanRes]: any = await connection.execute(
+                    `INSERT INTO loans (member_id, reference_no, loan_type, amount, interest_rate, duration_months, status, application_date, notes, total_payable, current_balance) 
+                     VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW(), ?, ?, ?)`,
+                    [userId, refNo, loan_type, amount, interestRate, duration_months, notes, totalPayable, totalPayable]
+                );
+                loanId = loanRes.insertId;
+            } catch (err) {
+                // Fallback for schemas missing reference_no
+                const [loanRes]: any = await connection.execute(
+                    `INSERT INTO loans (member_id, loan_type, amount, interest_rate, duration_months, status, application_date, notes, total_payable, current_balance) 
+                     VALUES (?, ?, ?, ?, ?, 'pending', NOW(), ?, ?, ?)`,
+                    [userId, loan_type, amount, interestRate, duration_months, notes, totalPayable, totalPayable]
+                );
+                loanId = loanRes.insertId;
+            }
 
             // 4. Insert Guarantors
             const gSql = `INSERT INTO loan_guarantors (loan_id, member_id, amount_locked, status, created_at) VALUES (?, ?, ?, 'pending', NOW())`;
