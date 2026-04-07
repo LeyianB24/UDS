@@ -118,7 +118,7 @@ export default function SharesPage() {
                             </div>
                             
                             <div className="hero-ctas">
-                                <Link href="/member/mpesa?type=shares" className="btn-lime">
+                                <Link href="/member/wallet?action=deposit&type=shares" className="btn-lime">
                                     <i className="bi bi-plus-circle-fill"></i> Buy Shares
                                 </Link>
                                 <Link href="/member/withdraw?type=wallet&source=shares" className="btn-ghost">
