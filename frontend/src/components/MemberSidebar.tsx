@@ -110,8 +110,8 @@ export function MemberSidebar() {
 
                         <span className="hd-section-label">Utilities</span>
                         {[
-                            { lbl: 'Pay Via M-Pesa', href: '/member/mpesa', ico: 'bi-phone-vibrate-fill' },
-                            { lbl: 'Withdraw Funds', href: '/member/withdraw', ico: 'bi-wallet2' },
+                            { lbl: 'Pay Via M-Pesa', href: '/member/wallet?action=deposit', ico: 'bi-phone-vibrate-fill' },
+                            { lbl: 'Withdraw Funds', href: '/member/wallet?action=withdraw', ico: 'bi-wallet2' },
                             { lbl: 'Messages', href: '/member/messages', ico: 'bi-chat-right-dots-fill' },
                             { lbl: 'All Transactions', href: '/member/transactions', ico: 'bi-arrow-left-right' },
                             { lbl: 'Notifications', href: '/member/notifications', ico: 'bi-bell-fill' },

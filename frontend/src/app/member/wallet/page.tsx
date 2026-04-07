@@ -92,7 +92,7 @@ function WalletContent() {
                         {data.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </div>
                     <div className="mt-6 flex gap-3">
-                        <Link href="/member/withdraw?source=wallet" className="btn-lime">
+                        <Link href="/member/wallet?action=withdraw&source=wallet" className="btn-lime">
                             <i className="bi bi-send-fill mr-2"></i> Withdraw Funds
                         </Link>
                         <Link href="/member/transactions" className="btn-ghost">

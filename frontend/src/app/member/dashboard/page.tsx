@@ -239,8 +239,8 @@ export default function MemberDashboard() {
                                 <div className="hbub"><div className="hbub-val">{ks(balances.wallet)}</div><div className="hbub-lbl">Wallet</div></div>
                             </div>
                             <div className="hero-ctas">
-                                <Link href="/member/mpesa" className="btn-lime"><i className="bi bi-plus-circle-fill"></i> Deposit</Link>
-                                {balances.wallet > 0 && <Link href="/member/withdraw" className="btn-ghost"><i className="bi bi-arrow-up-right-circle"></i> Withdraw</Link>}
+                                <Link href="/member/wallet?action=deposit" className="btn-lime"><i className="bi bi-plus-circle-fill"></i> Deposit</Link>
+                                {balances.wallet > 0 && <Link href="/member/wallet?action=withdraw" className="btn-ghost"><i className="bi bi-arrow-up-right-circle"></i> Withdraw</Link>}
                                 <Link href="/member/loans" className="btn-ghost"><i className="bi bi-bank2"></i> Apply Loan</Link>
                                 <Link href="/member/transactions" className="btn-ghost"><i className="bi bi-list-ul"></i> Transactions</Link>
                             </div>
@@ -456,11 +456,11 @@ export default function MemberDashboard() {
                             <div className="cc-head"><div><div className="cc-title">Quick Actions</div><div className="cc-sub">Common financial operations</div></div></div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1">
                                 {[
-                                    ['bi-plus-circle-fill', 'bg-green-50', 'text-green-600', 'Add Funds', '/member/mpesa?type=savings'],
-                                    ['bi-pie-chart-fill', 'bg-lime-50', 'text-lime-600', 'Buy Shares', '/member/mpesa?type=shares'],
-                                    ['bi-heart-fill', 'bg-rose-50', 'text-rose-600', 'Contribute', '/member/mpesa?type=welfare'],
+                                    ['bi-plus-circle-fill', 'bg-green-50', 'text-green-600', 'Add Funds', '/member/wallet?action=deposit&type=savings'],
+                                    ['bi-pie-chart-fill', 'bg-lime-50', 'text-lime-600', 'Buy Shares', '/member/wallet?action=deposit&type=shares'],
+                                    ['bi-heart-fill', 'bg-rose-50', 'text-rose-600', 'Contribute', '/member/wallet?action=deposit&type=welfare'],
                                     ['bi-bank2', 'bg-amber-50', 'text-amber-600', 'Apply Loan', '/member/loans'],
-                                    ['bi-wallet2', 'bg-blue-50', 'text-blue-600', 'Withdraw', '/member/withdraw'],
+                                    ['bi-wallet2', 'bg-blue-50', 'text-blue-600', 'Withdraw', '/member/wallet?action=withdraw'],
                                     ['bi-file-earmark-text', 'bg-gray-50', 'text-gray-600', 'Statement', '/member/savings'],
                                 ].map((a, i) => (
                                     <Link key={i} href={a[4]} className="flex items-center gap-3 p-3 bg-gray-50/50 border border-gray-100 rounded-xl transition-all hover:translate-y-[-2px] hover:shadow-sm">
