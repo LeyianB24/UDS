@@ -24,6 +24,9 @@ import {
 import { MemberApi, LoanData } from '@/lib/api/member';
 import { cn } from '@/lib/utils';
 
+import ApplyView from './ApplyView';
+import RepayView from './RepayView';
+
 // floatUp animation variant
 const floatUp = {
     initial: { opacity: 0, y: 20 },
@@ -42,6 +45,9 @@ const stagger = {
 export default function LoansPage() {
     const [data, setData] = useState<LoanData | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const [currentView, setCurrentView] = useState<'list' | 'apply' | 'repay'>('list');
+    const [repayLoanId, setRepayLoanId] = useState<string | null>(null);
 
     // Modal state for quick apply (matching original functionality)
     const [showApplyModal, setShowApplyModal] = useState(false);
@@ -82,6 +88,14 @@ export default function LoansPage() {
     const isExceeding = modalAmount > limit;
     const modalInterest = modalAmount * calcRate * (modalMonths / 12);
     const modalTotal = modalAmount + modalInterest;
+
+    if (currentView === 'apply') {
+        return <ApplyView onBack={() => setCurrentView('list')} initialType={loanType} initialAmount={modalAmount} initialMonths={modalMonths} />;
+    }
+
+    if (currentView === 'repay') {
+        return <RepayView loanId={repayLoanId} onBack={() => setCurrentView('list')} />;
+    }
 
     return (
         <motion.div 
@@ -227,13 +241,16 @@ export default function LoansPage() {
                                     </div>
                                     
                                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3">
-                                        <Link 
-                                            href={`/member/loans/repay?loan_id=${active_loan.loan_id}`}
+                                        <button 
+                                            onClick={() => {
+                                                setRepayLoanId(active_loan.loan_id.toString());
+                                                setCurrentView('repay');
+                                            }}
                                             className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#a3e635] text-[#0b2419] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#bceb3b] transition-all hover:-translate-y-1 shadow-xl shadow-[#a3e635]/20"
                                         >
                                             <Smartphone size={16} />
                                             <span>M-Pesa PAY</span>
-                                        </Link>
+                                        </button>
                                         <button 
                                             onClick={() => setShowRepayModal(true)}
                                             className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
@@ -521,8 +538,12 @@ export default function LoansPage() {
                                     </div>
                                 </div>
 
-                                <Link 
-                                    href={`/member/loans/apply?type=${loanType}&amount=${modalAmount}&months=${modalMonths}`}
+                                <button 
+                                    onClick={() => {
+                                        setShowApplyModal(false);
+                                        setCurrentView('apply');
+                                    }}
+                                    disabled={isExceeding || modalAmount <= 0}
                                     className={cn(
                                         "w-full h-16 rounded-[22px] font-black text-sm uppercase tracking-widest flex items-center justify-center transition-all shadow-xl",
                                         isExceeding || modalAmount <= 0 
@@ -531,7 +552,7 @@ export default function LoansPage() {
                                     )}
                                 >
                                     Proceed to Application
-                                </Link>
+                                </button>
                             </div>
                         </motion.div>
                     </div>
