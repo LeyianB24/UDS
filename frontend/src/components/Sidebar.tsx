@@ -21,7 +21,8 @@ import {
   PieChart,
   ClipboardList,
   Monitor,
-  Database
+  Database,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -44,6 +45,12 @@ const adminLinks = [
     { name: 'Cashier / Payments', href: '/admin/payments', icon: CreditCard },
     { name: 'Live Ledger', href: '/admin/ledger', icon: History },
     { name: 'Trial Balance', href: '/admin/balance', icon: Banknote },
+  ]},
+  { group: "Operations", items: [
+    { name: 'Loans Management', href: '/admin/loans', icon: Activity },
+    { name: 'Transactions', href: '/admin/transactions', icon: BarChart3 },
+    { name: 'Reports', href: '/admin/reports', icon: PieChart },
+    { name: 'Settings', href: '/admin/settings', icon: Settings },
   ]}
 ];
 
@@ -64,30 +71,31 @@ export function Sidebar() {
     localStorage.setItem('sb_collapsed', next ? '1' : '0');
   };
 
-  if (!mounted) return <div className="w-64 h-screen bg-[var(--bg-surface)]" />;
+  if (!mounted) return <div className="w-64 h-screen bg-white" />;
 
   return (
     <>
       <button 
         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         className={cn(
-          "fixed top-5 z-[60] w-8 h-8 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-lg flex items-center justify-center text-[var(--text-main)] transition-all duration-300 hover:bg-[var(--brand-forest)] hover:text-[var(--brand-lime)]",
+          "fixed top-5 z-[60] w-8 h-8 rounded-lg bg-white border border-gray-200 shadow-lg flex items-center justify-center text-gray-600 transition-all duration-300 hover:bg-green-50 hover:text-green-700",
           isCollapsed ? "left-[58px]" : "left-[250px]"
         )}
+        onClick={toggleCollapse}
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
 
       <aside 
         className={cn(
-          "fixed top-0 left-0 h-screen z-50 bg-[var(--bg-surface)] border-r border-[var(--border-color)] flex flex-col transition-all duration-300 shadow-[2px_0_30px_rgba(0,0,0,0.02)]",
+          "fixed top-0 left-0 h-screen z-50 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-[2px_0_30px_rgba(0,0,0,0.02)]",
           isCollapsed ? "w-20" : "w-[268px]"
         )}
       >
         {/* Brand */}
-        <div className="h-[72px] flex items-center px-4 border-b border-[var(--border-color)] shrink-0">
+        <div className="h-[72px] flex items-center px-4 border-b border-gray-200 shrink-0">
           <Link href="/admin/dashboard" className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 bg-[#0F392B] rounded-xl flex items-center justify-center p-2.5 shrink-0 shadow-xl shadow-emerald-950/20">
+            <div className="w-10 h-10 bg-green-800 rounded-xl flex items-center justify-center p-2.5 shrink-0 shadow-xl shadow-emerald-950/20">
                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter invert brightness-0 invert" onError={(e) => e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'} />
             </div>
             {!isCollapsed && (
@@ -96,51 +104,59 @@ export function Sidebar() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col"
               >
-                <span className="text-[13px] font-extrabold text-[var(--text-main)] leading-none tracking-tight">UMOJA SACCO</span>
-                <span className="text-[9px] font-bold text-[#D0F764] uppercase tracking-[1.5px] mt-1">Admin Portal</span>
+                <span className="text-[13px] font-extrabold text-gray-900 leading-none tracking-tight" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>UMOJA SACCO</span>
+                <span className="text-[9px] font-bold text-lime-500 uppercase tracking-[1.5px] mt-1">Admin Portal</span>
               </motion.div>
             )}
           </Link>
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 custom-scrollbar">
-          {adminLinks.map((group, gIdx) => (
-            <div key={gIdx} className="mb-6">
+        <div className="flex-1 overflow-y-auto py-4">
+          {adminLinks.map((group, groupIndex) => (
+            <div key={groupIndex} className="mb-6">
               {!isCollapsed && (
-                <div className="flex items-center gap-3 px-3 mb-3">
-                  <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[2px] whitespace-nowrap">{group.group}</span>
-                  <div className="h-px bg-[var(--border-color)] opacity-20 flex-1" />
+                <div className="px-4 mb-2">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>
+                    {group.group}
+                  </span>
                 </div>
               )}
               <div className="space-y-1">
-                {group.items.map((item, iIdx) => {
+                {group.items.map((item, itemIndex) => {
                   const isActive = pathname === item.href;
                   return (
                     <Link
-                      key={iIdx}
+                      key={itemIndex}
                       href={item.href}
                       className={cn(
-                        "group relative flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200",
-                        isActive 
-                          ? "bg-[var(--brand-forest)]/10 text-[var(--text-main)] font-bold" 
-                          : "text-[var(--text-muted)] hover:bg-[var(--brand-forest)]/5 hover:text-[var(--text-main)]"
+                        "flex items-center gap-3 px-4 py-3 text-sm transition-all duration-200 group relative",
+                        isCollapsed ? "justify-center" : "",
+                        isActive
+                          ? "bg-lime-50 text-green-800 border-r-2 border-lime-400"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       )}
+                      style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}
                     >
-                      {isActive && (
-                        <motion.div 
-                          layoutId="active-nav"
-                          className="absolute left-0 top-2 bottom-2 w-1 bg-[var(--brand-lime)] rounded-full"
-                        />
-                      )}
-                      <div className={cn(
-                        "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200",
-                        isActive ? "bg-[var(--brand-forest)] text-[var(--brand-lime)] shadow-lg shadow-emerald-500/20" : "bg-transparent text-inherit"
-                      )}>
-                        <item.icon size={18} />
-                      </div>
+                      <item.icon size={18} className={cn(
+                        "shrink-0 transition-colors",
+                        isActive ? "text-lime-500" : "text-gray-400 group-hover:text-gray-600"
+                      )} />
                       {!isCollapsed && (
-                        <span className="text-sm tracking-tight">{item.name}</span>
+                        <span className={cn(
+                          "font-medium transition-colors",
+                          isActive ? "text-green-800" : "text-gray-600 group-hover:text-gray-900"
+                        )}>
+                          {item.name}
+                        </span>
+                      )}
+                      {isActive && !isCollapsed && (
+                        <motion.div
+                          layoutId="activeIndicator"
+                          className="absolute left-0 top-0 bottom-0 w-1 bg-lime-400 rounded-r"
+                          initial={false}
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        />
                       )}
                     </Link>
                   );
@@ -150,16 +166,14 @@ export function Sidebar() {
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-[var(--border-color)]">
+        {/* Logout */}
+        <div className="p-4 border-t border-gray-200">
           <button className={cn(
-            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 font-bold hover:bg-red-500/10 transition-all duration-200",
-            isCollapsed && "justify-center"
+            "w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors",
+            isCollapsed ? "justify-center" : ""
           )}>
-            <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
-               <LogOut size={18} />
-            </div>
-            {!isCollapsed && <span className="text-sm">Sign Out</span>}
+            <LogOut size={18} />
+            {!isCollapsed && <span className="font-medium">Logout</span>}
           </button>
         </div>
       </aside>

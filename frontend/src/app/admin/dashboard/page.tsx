@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  TrendingUp, 
-  BarChart3, 
-  Activity, 
-  ArrowUpRight, 
-  ArrowDownRight, 
+import {
+  Users,
+  TrendingUp,
+  BarChart3,
+  Activity,
+  ArrowUpRight,
+  ArrowDownRight,
   Plus,
   ChevronRight,
   ShieldCheck,
@@ -15,7 +15,11 @@ import {
   ArrowRight,
   PieChart as PieChartIcon,
   Banknote,
-  History
+  History,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchApi } from '@/lib/api';
@@ -46,27 +50,12 @@ ChartJS.register(
   Filler
 );
 
-// Animation Variants
-const floatUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
-};
-
-const stagger = {
-    animate: {
-        transition: {
-            staggerChildren: 0.1
-        }
-    }
-};
-
 export default function AdminDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchApi('get_stats')
+    fetchApi('admin/dashboard')
       .then(res => {
         if (res.status === 'success') setStats(res.data);
       })
@@ -76,28 +65,246 @@ export default function AdminDashboard() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-[70vh]">
         <div className="relative">
-            <div className="w-16 h-16 border-4 border-[var(--brand-forest)]/10 border-t-[var(--brand-lime)] rounded-full animate-spin" />
-            <div className="absolute inset-0 flex items-center justify-center font-black text-[10px] text-[var(--brand-forest)]">UDS</div>
+            <div className="w-16 h-16 border-4 border-green-800/10 border-t-lime-400 rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center font-black text-[10px] text-green-800">UDS</div>
         </div>
-        <p className="mt-6 text-[var(--text-muted)] text-[10px] font-black uppercase tracking-[4px] animate-pulse">Syncing USMS Ledger...</p>
+        <p className="mt-6 text-gray-500 text-[10px] font-black uppercase tracking-[4px] animate-pulse" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Syncing USMS Ledger...</p>
     </div>
   );
 
   const displayStats = [
-    { title: 'Registered Members', value: stats?.members_total || 0, change: '+12.4%', type: 'up', icon: Users, color: 'emerald' },
-    { title: 'Loan Exposure', value: `KES ${(stats?.loans_exposure || 0).toLocaleString()}`, change: '+5.2%', type: 'up', icon: TrendingUp, color: 'blue' },
-    { title: 'Shares Portfolio', value: stats?.shares_count || 0, change: '-2%', type: 'down', icon: PieChartIcon, color: 'amber' },
-    { title: 'System Health', value: '100%', change: 'Stable', type: 'up', icon: ShieldCheck, color: 'lime' },
+    {
+      title: 'Registered Members',
+      value: stats?.total_members || 0,
+      subtitle: `${stats?.active_members || 0} active`,
+      icon: Users,
+      color: 'emerald',
+      link: '/admin/members'
+    },
+    {
+      title: 'Loan Exposure',
+      value: `KES ${(stats?.total_exposure || 0).toLocaleString()}`,
+      subtitle: `${stats?.pending_loans || 0} pending`,
+      icon: Activity,
+      color: 'blue',
+      link: '/admin/loans'
+    },
+    {
+      title: 'Cash Position',
+      value: `KES ${(stats?.cash_position || 0).toLocaleString()}`,
+      subtitle: 'Available funds',
+      icon: Banknote,
+      color: 'green',
+      link: '/admin/payments'
+    },
+    {
+      title: 'System Health',
+      value: `${stats?.health || 95}%`,
+      subtitle: 'Operational status',
+      icon: ShieldCheck,
+      color: 'lime',
+      link: '/admin/settings'
+    },
   ];
 
-  // Chart Data Mockup (Should ideally fetch from a new endpoint)
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
-    datasets: [
-      {
-        label: 'Revenue Inflow',
-        data: [450, 590, 800, 810, 560, 550, 700],
-        borderColor: '#D0F764',
+  return (
+    <div className="space-y-6" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>
+
+      {/* Hero Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="hp-hero relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #0f2e25 0%, #1d6044 100%)',
+          borderRadius: '28px',
+          padding: '52px 56px',
+          color: 'white',
+          boxShadow: '0 24px 60px rgba(15, 46, 37, 0.20)',
+          animation: 'heroSlideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both'
+        }}
+      >
+        {/* Background decorations */}
+        <div className="absolute top-0 right-0 bottom-0 w-1/2 opacity-5"
+             style={{
+               backgroundImage: `
+                 linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                 linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+               `,
+               backgroundSize: '32px 32px'
+             }}>
+        </div>
+
+        <div className="relative z-10 flex justify-between items-start">
+          <div className="flex-1">
+            {/* Status Badge */}
+            <div className="inline-flex items-center gap-2 bg-white/12 border border-white/15 backdrop-blur-xl rounded-full px-4 py-2 mb-6">
+              <div className="w-2 h-2 bg-lime-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(163,230,53,0.4)]"></div>
+              <span className="text-xs font-semibold uppercase tracking-wide text-white/90">System Online</span>
+            </div>
+
+            <h1 className="text-5xl font-black mb-4 leading-tight" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>
+              Command Dashboard
+            </h1>
+            <p className="text-white/70 text-lg leading-relaxed max-w-lg">
+              Monitor your Sacco's performance, manage operations, and ensure financial integrity across all systems.
+            </p>
+          </div>
+
+          {/* Integrity Card */}
+          <div className="bg-white/8 border border-white/12 backdrop-blur-xl rounded-2xl p-6 ml-8">
+            <div className="text-xs font-semibold uppercase tracking-wider text-white/55 mb-1">Database Integrity</div>
+            <div className="text-2xl font-black text-lime-400" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>{stats?.db_size || 'N/A'}</div>
+            <div className="text-xs text-white/40 mt-1">Size on disk</div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {displayStats.map((stat, index) => (
+          <motion.a
+            key={stat.title}
+            href={stat.link}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="stat-card group"
+            style={{
+              background: '#fff',
+              borderRadius: '20px',
+              padding: '26px 28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              border: '1px solid rgba(0,0,0,0.055)',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+              animation: `cardFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both`,
+              animationDelay: `${index * 0.07}s`
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)';
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className="stat-icon"
+                style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `linear-gradient(135deg, var(--${stat.color}-500) 0%, var(--${stat.color}-600) 100%)`,
+                  color: 'white'
+                }}
+              >
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-600 mb-1">{stat.title}</div>
+                <div className="text-2xl font-black text-gray-900" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>{stat.value}</div>
+                <div className="text-xs text-gray-500">{stat.subtitle}</div>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+          </motion.a>
+        ))}
+      </div>
+
+      {/* Charts and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-2xl border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Revenue Trend</h3>
+              <p className="text-sm text-gray-600">Last 7 days performance</p>
+            </div>
+            <TrendingUp size={20} className="text-lime-500" />
+          </div>
+          <div className="h-64">
+            <Line
+              data={{
+                labels: stats?.chart_labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                  label: 'Revenue',
+                  data: stats?.chart_data || [0, 0, 0, 0, 0, 0, 0],
+                  borderColor: '#a3e635',
+                  backgroundColor: 'rgba(163, 230, 53, 0.1)',
+                  fill: true,
+                  tension: 0.4
+                }]
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                  x: { grid: { display: false } }
+                }
+              }}
+            />
+          </div>
+        </motion.div>
+
+        {/* Recent Support Tickets */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-2xl border border-gray-200 p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>Support Tickets</h3>
+              <p className="text-sm text-gray-600">{stats?.open_tickets || 0} open tickets</p>
+            </div>
+            <AlertTriangle size={20} className="text-orange-500" />
+          </div>
+          <div className="space-y-4">
+            {stats?.tickets?.slice(0, 5).map((ticket: any, index: number) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle size={16} className="text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{ticket.title || 'Support Request'}</div>
+                    <div className="text-xs text-gray-600">by {ticket.sender}</div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  {new Date(ticket.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            )) || (
+              <div className="text-center py-8 text-gray-500">
+                <CheckCircle size={48} className="mx-auto mb-4 text-lime-500" />
+                <p className="text-sm">All tickets resolved!</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
         backgroundColor: 'rgba(208, 247, 100, 0.05)',
         fill: true,
         tension: 0.4,

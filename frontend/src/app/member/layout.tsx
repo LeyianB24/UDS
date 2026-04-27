@@ -12,13 +12,13 @@ export default function MemberLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="hd-layout w-full min-h-screen text-[0.95rem]">
+    <div className="hd-layout w-full min-h-screen text-[0.95rem] bg-gray-50" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>
       <MemberSidebar />
-      <div className="main-content">
+      <div className="main-content ml-[268px] transition-all duration-300">
         <MemberTopbar />
-        
+
         {/* Content Wrapper */}
-        <div className="w-full flex-grow">
+        <div className="w-full flex-grow px-4 py-4">
           {children}
         </div>
 
