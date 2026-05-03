@@ -1,232 +1,289 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Search, Filter, Download, Plus, ArrowUpDown, Eye } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  Activity,
+  ShieldCheck,
+  Zap,
+  RefreshCw,
+  Server,
+  Database,
+  Search,
+  Download,
+  AlertTriangle,
+  CheckCircle2,
+  Wifi,
+  Trash2,
+  HardDrive
+} from 'lucide-react';
 import { fetchApi } from '@/lib/api';
+import { cn, formatKES } from '@/lib/utils';
 
-export default function LedgerPage() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+export default function AdminLedgerPage() {
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'feed' | 'health' | 'audit'>('feed');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAccount, setSelectedAccount] = useState('all');
-  const [dateRange, setDateRange] = useState('30');
 
-  useEffect(() => {
-    loadLedgerData();
-  }, [selectedAccount, dateRange]);
-
-  const loadLedgerData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [transactionsRes, accountsRes] = await Promise.all([
-        fetchApi(`admin/ledger/transactions?account=${selectedAccount}&days=${dateRange}&q=${searchQuery}`),
-        fetchApi('admin/ledger/accounts')
-      ]);
-
-      if (transactionsRes.status === 'success') {
-        setTransactions(transactionsRes.data);
+      const res = await fetchApi(`admin/ledger?search=${searchQuery}`);
+      if (res.status === 'success') {
+        setData(res.data);
       }
-      if (accountsRes.status === 'success') {
-        setAccounts(accountsRes.data);
-      }
-    } catch (error) {
-      console.error('Failed to load ledger data:', error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery]);
 
-  const getAccountName = (accountId: number) => {
-    const account = accounts.find(a => a.account_id === accountId);
-    return account ? account.account_name : 'Unknown Account';
-  };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case 'debit': return 'text-red-600 bg-red-50';
-      case 'credit': return 'text-green-600 bg-green-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
+  const handleSystemAction = async (action: string) => {
+      try {
+          const res = await fetchApi('admin/ledger', 'POST', { action });
+          alert(res.message);
+          if (res.status === 'success') {
+              loadData();
+          }
+      } catch (e) {
+          console.error(e);
+      }
   };
-
-  const formatAmount = (amount: number, type: string) => {
-    const formatted = Math.abs(amount).toLocaleString();
-    return type === 'debit' ? `-${formatted}` : `+${formatted}`;
-  };
-
-  if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-lime-500"></div>
-    </div>
-  );
 
   return (
-    <div className="space-y-6" style={{fontFamily: "'Plus Jakarta Sans', sans-serif"}}>
+    <div className="space-y-8 pb-20">
+      
+      {/* HERO */}
+      <div className="bg-gradient-to-br from-[#0f2e25] to-[#1a5c42] text-white rounded-[32px] p-8 lg:p-12 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-8 shadow-xl shadow-green-950/20">
+         <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '32px 32px', pointerEvents: 'none' }}></div>
+         
+         <div className="relative z-10 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-lime-400/10 border border-lime-400/20 text-[10px] font-black uppercase tracking-widest text-lime-200 mb-6">
+               <span className="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse" /> Unified Monitoring
+            </div>
+            <h1 className="text-4xl lg:text-5xl font-black tracking-tight leading-none mb-4">
+               System Monitor.
+            </h1>
+            <p className="text-white/60 text-sm font-bold leading-relaxed">
+               Operations feed, financial integrity, and security audit in one view.
+            </p>
+         </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Live Ledger</h1>
-          <p className="text-gray-600 mt-1">Real-time view of all financial transactions and account balances</p>
-        </div>
-        <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors">
-            <Download size={18} />
-            Export
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-lime-500 text-white rounded-xl hover:bg-lime-600 transition-colors">
-            <Plus size={18} />
-            New Entry
-          </button>
-        </div>
+         <div className="relative z-10 flex flex-col gap-3 shrink-0">
+             <button onClick={loadData} className="px-6 py-4 bg-lime-400 text-[#0f2e25] font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-lime-300 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-lime-400/20">
+                 <RefreshCw size={16} /> Refresh Feed
+             </button>
+         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex-1 min-w-64">
-            <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-              />
-            </div>
+      {/* TABS */}
+      <div className="flex flex-wrap gap-2 bg-white border border-gray-200 rounded-2xl p-2 w-fit shadow-sm">
+          <button onClick={() => setActiveTab('feed')} className={cn("px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2", activeTab === 'feed' ? "bg-[var(--brand-forest)] text-white shadow-md" : "text-gray-500 hover:text-gray-900")}>
+              <Activity size={16} /> Operations Feed
+          </button>
+          <button onClick={() => setActiveTab('health')} className={cn("px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2", activeTab === 'health' ? "bg-[var(--brand-forest)] text-white shadow-md" : "text-gray-500 hover:text-gray-900")}>
+              <Server size={16} /> Health & Integrity
+          </button>
+      </div>
+
+      {activeTab === 'feed' && (
+      <div className="space-y-6">
+          {/* KPI CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4"><CheckCircle2 size={20} /></div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Callback Success</div>
+                  <div className="text-3xl font-black text-[var(--brand-forest)]">{data?.health?.callback_success_rate || 0}%</div>
+                  <div className="mt-4 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500" style={{width: \`\${data?.health?.callback_success_rate || 0}%\`}}></div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4"><AlertTriangle size={20} /></div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Pending STK</div>
+                  <div className="text-3xl font-black text-amber-600">{data?.health?.pending_transactions || 0}</div>
+                  <div className="mt-4 text-[10px] font-bold text-amber-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Stuck {'>'} 5 mins
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-yellow-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4"><AlertTriangle size={20} /></div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Failed Comms</div>
+                  <div className="text-3xl font-black text-red-600">{data?.health?.failed_notifications || 0}</div>
+                  <div className="mt-4 text-[10px] font-bold text-red-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> Delivery errors today
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-rose-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="bg-gradient-to-br from-[var(--brand-forest)] to-[#1a5c42] rounded-3xl p-6 shadow-sm relative overflow-hidden group hover:-translate-y-1 transition-transform border-none">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 text-lime-400 flex items-center justify-center mb-4"><Zap size={20} /></div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Daily Volume</div>
+                  <div className="text-2xl font-black text-white">{formatKES(data?.health?.daily_volume || 0)}</div>
+                  <div className="mt-4 text-[10px] font-bold text-white/50 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-lime-400"></span> Successfully processed
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-lime-400 to-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
           </div>
 
-          <select
-            value={selectedAccount}
-            onChange={(e) => setSelectedAccount(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-          >
-            <option value="all">All Accounts</option>
-            {accounts.map(account => (
-              <option key={account.account_id} value={account.account_id}>
-                {account.account_name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-lime-500 focus:border-transparent"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 3 months</option>
-            <option value="365">Last year</option>
-          </select>
-
-          <button
-            onClick={loadLedgerData}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
-          >
-            <Filter size={18} />
-            Apply
-          </button>
-        </div>
-      </div>
-
-      {/* Account Balances Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {accounts.slice(0, 4).map((account, index) => (
-          <motion.div
-            key={account.account_id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium text-gray-600">{account.account_name}</div>
-                <div className="text-2xl font-black text-gray-900">
-                  KES {account.current_balance?.toLocaleString() || '0'}
-                </div>
+          {/* FEED TABLE */}
+          <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <div>
+                      <h3 className="text-sm font-black text-gray-900">Operation Audit Feed</h3>
+                      <p className="text-xs font-bold text-gray-500 mt-1">Real-time system activity</p>
+                  </div>
+                  <div className="flex gap-2">
+                      <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                          <input 
+                              type="text" 
+                              placeholder="Search logs..." 
+                              className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-[var(--brand-forest)]/20 focus:border-[var(--brand-forest)] outline-none"
+                              value={searchQuery}
+                              onChange={e => setSearchQuery(e.target.value)}
+                          />
+                      </div>
+                  </div>
               </div>
-              <div className="w-12 h-12 bg-lime-100 rounded-xl flex items-center justify-center">
-                <BookOpen size={24} className="text-lime-600" />
+              <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                      <thead>
+                          <tr className="bg-gray-50 border-b border-gray-100">
+                              <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Time</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Action</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Severity</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Details</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">IP</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                          {loading ? (
+                              <tr><td colSpan={5} className="p-8 text-center text-sm font-bold text-gray-400">Loading...</td></tr>
+                          ) : data?.logs?.length === 0 ? (
+                              <tr><td colSpan={5} className="p-8 text-center text-sm font-bold text-gray-400">No logs found</td></tr>
+                          ) : (
+                              data?.logs?.map((log: any) => (
+                                  <tr key={log.id} className="hover:bg-gray-50/50">
+                                      <td className="px-6 py-4">
+                                          <div className="text-xs font-black text-gray-900 font-mono">{new Date(log.created_at).toLocaleTimeString()}</div>
+                                          <div className="text-[10px] font-bold text-gray-500 mt-0.5">{new Date(log.created_at).toLocaleDateString()}</div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          <div className="text-xs font-black text-gray-900">{log.action}</div>
+                                          <div className="text-[10px] font-bold text-gray-500 mt-0.5">{log.user_type || 'System'}</div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                          <span className={cn(
+                                              "px-2 py-1 rounded border text-[10px] font-black uppercase tracking-widest",
+                                              log.severity === 'info' ? "bg-blue-50 text-blue-600 border-blue-200" :
+                                              log.severity === 'warning' ? "bg-amber-50 text-amber-600 border-amber-200" :
+                                              log.severity === 'error' ? "bg-red-50 text-red-600 border-red-200" :
+                                              "bg-green-50 text-green-600 border-green-200"
+                                          )}>{log.severity || 'INFO'}</span>
+                                      </td>
+                                      <td className="px-6 py-4 text-xs font-bold text-gray-600 max-w-[300px] truncate">
+                                          {log.details}
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                          <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded font-mono text-[10px] font-bold">{log.ip_address}</span>
+                                      </td>
+                                  </tr>
+                              ))
+                          )}
+                      </tbody>
+                  </table>
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Transactions Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">Recent Transactions</h2>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Account</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Reference</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {transactions.map((transaction, index) => (
-                <motion.tr
-                  key={transaction.transaction_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(transaction.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getAccountName(transaction.account_id)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                    {transaction.description}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTransactionTypeColor(transaction.transaction_type)}`}>
-                      {transaction.transaction_type}
-                    </span>
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${
-                    transaction.transaction_type === 'debit' ? 'text-red-600' : 'text-green-600'
-                  }`}>
-                    {formatAmount(transaction.amount, transaction.transaction_type)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {transaction.reference_number || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    <button className="text-lime-600 hover:text-lime-800 transition-colors">
-                      <Eye size={16} />
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {transactions.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
-            <p className="text-gray-600">Try adjusting your filters or check back later.</p>
           </div>
-        )}
       </div>
+      )}
+
+      {activeTab === 'health' && (
+      <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                  <div className="flex items-start justify-between mb-2">
+                      <div className="text-sm font-black text-gray-900">Ledger Balance Sync</div>
+                      <span className={cn("w-2 h-2 rounded-full", data?.health?.ledger_imbalance ? "bg-red-500 animate-pulse" : "bg-green-500")}></span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-500 mb-6">Total Debits vs Credits in the golden ledger. Discrepancies indicate posting errors.</p>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className={cn("px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest", data?.health?.ledger_imbalance ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600")}>
+                          {data?.health?.ledger_imbalance ? 'Imbalance Detected' : 'Healthy'}
+                      </span>
+                  </div>
+                  <div className={cn("absolute bottom-0 left-0 w-full h-1", data?.health?.ledger_imbalance ? "bg-red-500" : "bg-green-500")} />
+              </div>
+              
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                  <div className="flex items-start justify-between mb-2">
+                      <div className="text-sm font-black text-gray-900">Member Account Sync</div>
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-500 mb-6">Verifies individual account balances against the full transaction history for each member.</p>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-600">Verified</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-green-500" />
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                  <div className="flex items-start justify-between mb-2">
+                      <div className="text-sm font-black text-gray-900">Database Storage</div>
+                      <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-500 mb-6">Current size of the central repository. Archiving is recommended above 500 MB.</p>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-xl font-black text-[var(--brand-forest)]">{data?.health?.db_size || 0} MB</span>
+                      <span className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-500">Storage</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-lime-400" />
+              </div>
+          </div>
+
+          {/* POWER PANEL */}
+          <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-[var(--brand-forest)] text-lime-400 rounded-2xl flex items-center justify-center">
+                      <Server size={20} />
+                  </div>
+                  <div>
+                      <h3 className="text-lg font-black text-gray-900">Maintenance Power Panel</h3>
+                      <p className="text-xs font-bold text-gray-500">Direct low-level system diagnostic and recovery operations.</p>
+                  </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <button onClick={() => handleSystemAction('test_connectivity')} className="p-6 bg-gray-50 hover:bg-white border-2 border-transparent hover:border-gray-200 rounded-2xl text-center transition-all group shadow-sm hover:shadow-md">
+                      <Wifi size={24} className="mx-auto text-[var(--brand-forest)] mb-3" />
+                      <div className="text-sm font-black text-gray-900 mb-1">API Connectivity</div>
+                      <div className="text-[10px] font-bold text-gray-500 leading-tight">Test M-Pesa gateway & mail server</div>
+                  </button>
+                  <button onClick={() => handleSystemAction('clear_cache')} className="p-6 bg-gray-50 hover:bg-white border-2 border-transparent hover:border-gray-200 rounded-2xl text-center transition-all group shadow-sm hover:shadow-md">
+                      <Trash2 size={24} className="mx-auto text-[var(--brand-forest)] mb-3" />
+                      <div className="text-sm font-black text-gray-900 mb-1">Purge Cache</div>
+                      <div className="text-[10px] font-bold text-gray-500 leading-tight">Clear session & temp files</div>
+                  </button>
+                  <button onClick={() => handleSystemAction('resync_financials')} className="p-6 bg-gray-50 hover:bg-white border-2 border-transparent hover:border-gray-200 rounded-2xl text-center transition-all group shadow-sm hover:shadow-md">
+                      <Database size={24} className="mx-auto text-[var(--brand-forest)] mb-3" />
+                      <div className="text-sm font-black text-gray-900 mb-1">Resync Ledgers</div>
+                      <div className="text-[10px] font-bold text-gray-500 leading-tight">Recalculate all account balances</div>
+                  </button>
+                  <button onClick={() => handleSystemAction('run_audit')} className="p-6 bg-[var(--brand-forest)] text-lime-400 hover:bg-green-900 rounded-2xl text-center transition-all group shadow-sm hover:shadow-md">
+                      <ShieldCheck size={24} className="mx-auto mb-3" />
+                      <div className="text-sm font-black mb-1">Run Deep Audit</div>
+                      <div className="text-[10px] font-bold text-white/60 leading-tight">Execute full system integrity scan</div>
+                  </button>
+              </div>
+          </div>
+      </div>
+      )}
     </div>
   );
 }
