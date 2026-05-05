@@ -22,7 +22,8 @@ import {
     ArrowUpRight,
     TrendingUp,
     Zap,
-    X
+    X,
+    ShieldCheck
 } from 'lucide-react';
 import { MemberApi, TransactionData } from '@/lib/api/member';
 import { cn } from '@/lib/utils';

@@ -235,6 +235,7 @@ export default function AdminUsersPage() {
                           {!isMe && (
                              <button 
                                onClick={() => handleDelete(user.admin_id)}
+                               title="Delete staff member"
                                className="h-11 w-11 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-xl flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all active:scale-95"
                              >
                                <Trash2 size={18} />
