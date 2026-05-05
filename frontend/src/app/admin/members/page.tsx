@@ -150,7 +150,7 @@ export default function MembersPage() {
            <div className="flex items-center gap-6">
               <div className="flex items-center gap-4 px-6 py-4 bg-[var(--bg-primary)]/50 border border-[var(--border-color)] rounded-[24px]">
                 <Filter size={18} className="text-[var(--text-muted)]" />
-                <select 
+                <select title="Filter members by status" aria-label="Filter members by status" 
                   className="bg-transparent border-none outline-none text-[11px] font-black uppercase tracking-widest text-[var(--text-main)] cursor-pointer"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
