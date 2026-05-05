@@ -110,7 +110,7 @@ export async function POST(request: Request) {
             await connection.execute(
                 `INSERT INTO transactions (member_id, amount, transaction_type, payment_channel, reference_no, notes, status, created_at, related_table, related_id)
                  VALUES (?, ?, 'income', ?, ?, ?, 'completed', NOW(), 'members', ?)`,
-                [member_id, 1000.00, payment_method, ref, \`Registration Fee for Member \${reg_no}\`, member_id]
+                [member_id, 1000.00, payment_method, ref, `Registration Fee for Member ${reg_no}`, member_id]
             );
         }
 
@@ -122,11 +122,11 @@ export async function POST(request: Request) {
             message: `Member successfully registered with ID: ${reg_no}` 
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (connection) {
             await connection.rollback();
             connection.release();
         }
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+        return NextResponse.json({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
     }
 }

@@ -124,12 +124,12 @@ export async function POST(request: Request) {
                     amt, 
                     transaction_type, 
                     category, 
-                    reference_no || \`TXN\${Date.now()}\`, 
+                    reference_no || `TXN${Date.now()}`, 
                     notes || '', 
                     payment_method || 'cash', 
                     related_id, 
                     related_table,
-                    txn_date ? \`\${txn_date} \${new Date().toTimeString().split(' ')[0]}\` : null
+                    txn_date ? `${txn_date} ${new Date().toTimeString().split(' ')[0]}` : null
                 ]
             );
 

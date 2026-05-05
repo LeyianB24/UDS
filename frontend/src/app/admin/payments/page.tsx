@@ -94,7 +94,7 @@ export default function AdminPaymentsPage() {
   const handleExport = (type: string) => {
       // In a real app, this would trigger a download.
       // For this migration, we'll just show an alert or open a new window.
-      alert(\`Export \${type} triggered. Real implementation would generate file.\`);
+      alert(`Export ${type} triggered. Real implementation would generate file.`);
   };
 
   const isIncome = (type: string) => ['deposit', 'savings_deposit', 'loan_repayment', 'share_purchase', 'revenue_inflow', 'share_capital'].includes(type);
@@ -249,7 +249,7 @@ export default function AdminPaymentsPage() {
                                               <div>
                                                   <div className="text-sm font-black text-gray-900">
                                                       {txn.member_id ? (
-                                                          <Link href={\`/admin/members/\${txn.member_id}\`} className="hover:text-[var(--brand-forest)] transition-colors">{name}</Link>
+                                                          <Link href={`/admin/members/${txn.member_id}`} className="hover:text-[var(--brand-forest)] transition-colors">{name}</Link>
                                                       ) : name}
                                                   </div>
                                                   {txn.national_id && <div className="text-[10px] font-bold text-gray-500 mt-0.5">ID: {txn.national_id}</div>}
@@ -338,7 +338,7 @@ export default function AdminPaymentsPage() {
                      <option value="other_0">General / Office</option>
                      <optgroup label="Investments & Projects">
                          {data?.investments?.map((inv: any) => (
-                             <option key={inv.investment_id} value={\`inv_\${inv.investment_id}\`}>{inv.title}</option>
+                             <option key={inv.investment_id} value={`inv_${inv.investment_id}`}>{inv.title}</option>
                          ))}
                      </optgroup>
                   </select>

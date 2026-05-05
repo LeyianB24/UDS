@@ -43,6 +43,7 @@ const adminLinks = [
   ]},
   { group: "Financials", items: [
     { name: 'Cashier / Payments', href: '/admin/payments', icon: CreditCard },
+    { name: 'Shares & Equity', href: '/admin/shares', icon: PieChart },
     { name: 'Live Ledger', href: '/admin/ledger', icon: History },
     { name: 'Trial Balance', href: '/admin/balance', icon: Banknote },
   ]},

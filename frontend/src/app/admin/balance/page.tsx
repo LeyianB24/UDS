@@ -45,7 +45,7 @@ export default function AdminTrialBalancePage() {
   }, []);
 
   const handleExport = (type: string) => {
-      alert(\`Export \${type} triggered.\`);
+      alert(`Export ${type} triggered.`);
   };
 
   const chartData = data ? [
@@ -173,7 +173,7 @@ export default function AdminTrialBalancePage() {
                               stroke="none"
                           >
                               {chartData.map((entry: any, index: number) => (
-                                  <Cell key={\`cell-\${index}\`} fill={entry.fill} />
+                                  <Cell key={`cell-${index}`} fill={entry.fill} />
                               ))}
                           </Pie>
                           <RechartsTooltip formatter={(val: number) => formatKES(val)} />

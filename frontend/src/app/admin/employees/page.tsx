@@ -148,7 +148,7 @@ export default function AdminEmployeesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Staff', value: data?.stats?.totalStaff, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-          { label: 'Monthly Payroll', value: \`KES \${Number(data?.stats?.monthlyPayroll || 0).toLocaleString()}\`, icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Monthly Payroll', value: `KES ${Number(data?.stats?.monthlyPayroll || 0).toLocaleString()}`, icon: Wallet, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Active Drivers', value: data?.stats?.activeDrivers, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' }
         ].map((stat, idx) => (
           <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm">
