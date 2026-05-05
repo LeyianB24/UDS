@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -25,7 +23,6 @@ import {
     Inbox,
     Download,
     ArrowRight,
-    Circle,
     Activity,
     ChevronRight,
     PieChart
@@ -115,7 +112,7 @@ export default function SavingsPage() {
             x: { 
                 display: true, 
                 grid: { display: false }, 
-                ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 9, weight: '800' as const } } 
+                ticks: { color: 'rgba(255,255,255,0.2)', font: { size: 9, weight: 700 } } 
             },
             y: { display: false }
         },
@@ -341,7 +338,7 @@ export default function SavingsPage() {
                                     <Inbox size={40} />
                                 </div>
                                 <h4 className="text-lg font-bold text-[#0b2419] mb-2 tracking-tight">Empty Statement Pool</h4>
-                                <p className="text-sm text-slate-400 font-medium max-w-[280px]">We couldn't find any transactions matching your selected filters.</p>
+                                <p className="text-sm text-slate-400 font-medium max-w-[280px]">We couldn&apos;t find any transactions matching your selected filters.</p>
                                 <button onClick={() => setFilter('All')} className="mt-8 text-[11px] font-black text-[#0b2419] uppercase tracking-widest hover:underline">Clear all filters</button>
                             </div>
                         )}

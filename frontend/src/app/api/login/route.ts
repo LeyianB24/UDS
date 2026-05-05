@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { login } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import type { RowDataPacket } from 'mysql2';
 
 export async function POST(request: Request) {
     try {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
         };
 
         // 1. Try Admin Login
-        const [adminRows]: any = await pool.execute(
+        const [adminRows] = await pool.execute<RowDataPacket[]>(
             `SELECT a.admin_id, a.full_name, a.username, a.role_id, r.name as role_name, a.password 
              FROM admins a 
              JOIN roles r ON a.role_id = r.id 
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
         }
 
         // 2. Try Member Login
-        const [memberRows]: any = await pool.execute(
+        const [memberRows] = await pool.execute<RowDataPacket[]>(
             `SELECT member_id, full_name, member_reg_no, password, registration_fee_status 
              FROM members 
              WHERE email = ? OR member_reg_no = ? 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
             { status: 401 }
         );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Login Error:', error);
         return NextResponse.json(
             { status: 'error', message: 'Internal server error during login' },

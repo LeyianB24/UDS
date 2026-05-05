@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getSession } from '@/lib/auth';
+import type { RowDataPacket } from 'mysql2';
 
 export async function GET(request: Request) {
     try {
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
 
         // Fetch single ticket details
         if (id) {
-            const [tickets]: any = await pool.execute(`
+            const [tickets] = await pool.execute<RowDataPacket[]>(`
                 SELECT s.support_id, s.member_id, s.subject, s.message, s.status, s.created_at, s.attachment, s.category,
                 CASE WHEN s.member_id > 0 THEN m.full_name ELSE 'System' END AS sender_name,
                 CASE WHEN s.member_id > 0 THEN 'Member' ELSE 'Internal' END AS sender_role
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
             const ticket = tickets[0];
 
             // Fetch replies
-            const [replies]: any = await pool.execute(`
+            const [replies] = await pool.execute<RowDataPacket[]>(`
                 SELECT r.reply_id, r.message, r.sender_type, r.created_at, r.attachment,
                 CASE WHEN r.sender_type = 'admin' THEN a.full_name ELSE m.full_name END AS sender_name
                 FROM support_replies r
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
             LEFT JOIN members m ON s.member_id = m.member_id
             WHERE 1=1
         `;
-        const params: any[] = [];
+        const params: string[] = [];
 
         if (status !== 'all') {
             query += " AND s.status = ?";
@@ -77,10 +78,10 @@ export async function GET(request: Request) {
 
         query += " ORDER BY s.created_at DESC";
 
-        const [tickets]: any = await pool.execute(query, params);
+        const [tickets] = await pool.execute<RowDataPacket[]>(query, params);
 
         // Stats
-        const [statsRows]: any = await pool.execute(`
+        const [statsRows] = await pool.execute<RowDataPacket[]>(`
             SELECT 
             COUNT(*) as total,
             SUM(CASE WHEN status='Pending' THEN 1 ELSE 0 END) as pending,
@@ -102,8 +103,8 @@ export async function GET(request: Request) {
             }
         });
 
-    } catch (error: any) {
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
     }
 }
 
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ status: 'error', message: 'Invalid action' }, { status: 400 });
 
-    } catch (error: any) {
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
     }
 }
