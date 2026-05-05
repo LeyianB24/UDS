@@ -4,7 +4,22 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
+import { 
+    ArrowLeft, 
+    PlusCircle, 
+    ArrowUpRight, 
+    PieChart, 
+    CircleDollarSign, 
+    Award, 
+    TrendingUp, 
+    Inbox,
+    Info,
+    ShieldCheck,
+    LogOut,
+    Layers
+} from 'lucide-react';
 import { MemberApi, SharesData } from '@/lib/api/member';
+import { cn } from '@/lib/utils';
 import './shares.css';
 import {
     Chart as ChartJS,
@@ -43,7 +58,7 @@ export default function SharesPage() {
     if (loading || !data) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#a3e635]"></div>
+                <div className="w-12 h-12 border-4 border-[#0b2419]/10 border-t-[#a3e635] rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -97,8 +112,8 @@ export default function SharesPage() {
 
                 <div className="hero-inner">
                     <div className="hero-nav">
-                        <Link href="/member/dashboard" className="hero-back">
-                            <i className="bi bi-arrow-left"></i> Dashboard
+                        <Link href="/member/dashboard" className="hero-back group">
+                            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Dashboard
                         </Link>
                         <span className="hero-brand-tag">UMOJA SACCO</span>
                     </div>
@@ -112,20 +127,20 @@ export default function SharesPage() {
                                 <span>{data.portfolio_value.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                             
-                            <div className="hero-gain positive">
+                            <div className={cn("hero-gain", data.gain_pct >= 0 ? 'positive' : 'negative')}>
                                 <span className="gain-dot"></span>
                                 {data.gain_pct >= 0 ? '+' : ''}{data.gain_pct.toFixed(2)}% capital growth
                             </div>
                             
                             <div className="hero-ctas">
-                                <Link href="/member/wallet?action=deposit&type=shares" className="btn-lime">
-                                    <i className="bi bi-plus-circle-fill"></i> Buy Shares
+                                <Link href="/member/wallet?view=deposit&type=shares" className="btn-lime">
+                                    <PlusCircle size={18} /> Buy Shares
                                 </Link>
-                                <Link href="/member/withdraw?type=wallet&source=shares" className="btn-ghost">
-                                    <i className="bi bi-cash-stack"></i> Dividends
+                                <Link href="/member/wallet?view=withdraw&type=wallet&source=shares" className="btn-ghost">
+                                    <ArrowUpRight size={18} className="text-[#a3e635]" /> Dividends
                                 </Link>
-                                <Link href="/member/withdraw?type=shares&source=shares" className="btn-danger-ghost">
-                                    <i className="bi bi-door-open"></i> Quit SACCO
+                                <Link href="/member/wallet?view=withdraw&type=shares&source=shares" className="btn-danger-ghost">
+                                    <LogOut size={18} /> Quit SACCO
                                 </Link>
                             </div>
                         </div>
@@ -148,7 +163,7 @@ export default function SharesPage() {
                     <div className="col-md-3 sa1">
                         <div className="sc sc-g bg-white shadow-sm border border-gray-100">
                             <div className="sc-ico bg-green-50 text-green-600">
-                                <i className="bi bi-pie-chart-fill"></i>
+                                <PieChart size={20} />
                             </div>
                             <div className="sc-lbl text-gray-400">Ownership Units</div>
                             <div className="sc-val text-gray-900">{data.units.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
@@ -159,7 +174,7 @@ export default function SharesPage() {
                     <div className="col-md-3 sa2">
                         <div className="sc sc-l bg-white shadow-sm border border-gray-100">
                             <div className="sc-ico bg-lime-50 text-lime-600">
-                                <i className="bi bi-currency-exchange"></i>
+                                <CircleDollarSign size={20} />
                             </div>
                             <div className="sc-lbl text-gray-400">Share Price</div>
                             <div className="sc-val text-gray-900">KES {data.share_price.toLocaleString()}</div>
@@ -170,7 +185,7 @@ export default function SharesPage() {
                     <div className="col-md-3 sa3">
                         <div className="sc sc-a bg-white shadow-sm border border-gray-100">
                             <div className="sc-ico bg-amber-50 text-amber-600">
-                                <i className="bi bi-award-fill"></i>
+                                <Award size={20} />
                             </div>
                             <div className="sc-lbl text-gray-400">Projected Dividend</div>
                             <div className="sc-val text-gray-900">KES {Math.round(data.projected_dividend).toLocaleString()}</div>
@@ -181,7 +196,7 @@ export default function SharesPage() {
                     <div className="col-md-3 sa4">
                         <div className="sc sc-b bg-white shadow-sm border border-gray-100">
                             <div className={`sc-ico ${data.gain_pct >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
-                                <i className="bi bi-graph-up-arrow"></i>
+                                <TrendingUp size={20} />
                             </div>
                             <div className="sc-lbl text-gray-400">Capital Gain</div>
                             <div className={`sc-val ${data.gain_pct >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
@@ -202,7 +217,7 @@ export default function SharesPage() {
             {/* BODY */}
             <div className="pg-body">
                 <div className="sec-label text-gray-400">
-                    <i className="bi bi-stack text-[#a3e635]"></i> Share Transaction History
+                    <Layers size={14} className="text-[#a3e635]" /> Share Transaction History
                 </div>
 
                 <div className="txn-card bg-white border border-gray-100 shadow-sm">
@@ -233,7 +248,7 @@ export default function SharesPage() {
                                         </td>
                                         <td>
                                             <div className="unit-chip text-gray-900">
-                                                <div className="unit-pip"><i className="bi bi-layer-forward"></i></div>
+                                                <div className="unit-pip"><PlusCircle size={12} /></div>
                                                 <span>{txn.units.toFixed(2)} Units</span>
                                             </div>
                                         </td>
@@ -247,7 +262,7 @@ export default function SharesPage() {
                                     <tr>
                                         <td colSpan={5}>
                                             <div className="empty-well text-gray-300">
-                                                <div className="ew-ico bg-gray-50"><i className="bi bi-inbox"></i></div>
+                                                <div className="ew-ico bg-gray-50"><Inbox size={32} /></div>
                                                 <div className="ew-title text-gray-400">No share records found</div>
                                                 <div className="ew-sub">Your share history will appear here after your first purchase.</div>
                                             </div>
@@ -262,27 +277,27 @@ export default function SharesPage() {
                 {/* EDUCATION */}
                 <div className="edu-card bg-white border border-gray-100 shadow-sm">
                     <div className="edu-head">
-                        <i className="bi bi-info-circle-fill text-[#a3e635]"></i>
+                        <Info size={16} className="text-[#a3e635]" />
                         <span className="edu-title">About SACCO Shares</span>
                     </div>
                     <div className="edu-body text-gray-600">
                         <div className="edu-grid">
                             <div className="edu-item">
-                                <div className="edu-ico bg-blue-50 text-blue-600"><i className="bi bi-award"></i></div>
+                                <div className="edu-ico bg-blue-50 text-blue-600"><Award size={20} /></div>
                                 <div>
                                     <div className="edu-h text-gray-900">Permanent Capital</div>
                                     <p className="edu-p">Shares represent your permanent ownership in Umoja Drivers Sacco. They are not withdrawable but transferable.</p>
                                 </div>
                             </div>
                             <div className="edu-item">
-                                <div className="edu-ico bg-green-50 text-green-600"><i className="bi bi-graph-up"></i></div>
+                                <div className="edu-ico bg-green-50 text-green-600"><TrendingUp size={20} /></div>
                                 <div>
                                     <div className="edu-h text-gray-900">Dividends</div>
                                     <p className="edu-p">Earn annual dividends based on Sacco profitability. In 2023, the board declared a 12.5% dividend on shares.</p>
                                 </div>
                             </div>
                             <div className="edu-item">
-                                <div className="edu-ico bg-amber-50 text-amber-600"><i className="bi bi-shield-check"></i></div>
+                                <div className="edu-ico bg-amber-50 text-amber-600"><ShieldCheck size={20} /></div>
                                 <div>
                                     <div className="edu-h text-gray-900">Voting Rights</div>
                                     <p className="edu-p">Maintaining the minimum share capital grants you full voting rights during the Annual General Meeting (AGM).</p>

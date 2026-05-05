@@ -26,7 +26,9 @@ import {
     Download,
     ArrowRight,
     Circle,
-    Activity
+    Activity,
+    ChevronRight,
+    PieChart
 } from 'lucide-react';
 import { MemberApi, SavingsData } from '@/lib/api/member';
 import { cn } from '@/lib/utils';
@@ -174,7 +176,7 @@ export default function SavingsPage() {
                                     <PlusCircle size={18} />
                                     Add Funds
                                 </Link>
-                                <Link href="/member/withdraw?type=savings" className="inline-flex items-center gap-2.5 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-all">
+                                <Link href="/member/wallet?view=withdraw&type=savings&source=savings" className="inline-flex items-center gap-2.5 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-all">
                                     <ArrowUpRight size={18} className="text-[#a3e635]" />
                                     Withdraw
                                 </Link>

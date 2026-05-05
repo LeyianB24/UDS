@@ -29,7 +29,7 @@ interface WalletData {
 
 function WalletContent() {
     const searchParams = useSearchParams();
-    const action = searchParams.get('action');
+    const view = searchParams.get('view');
 
     const [data, setData] = useState<WalletData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -52,12 +52,12 @@ function WalletContent() {
     }, []);
 
     useEffect(() => {
-        if (!action) loadData();
-    }, [loadData, action]);
+        if (!view) loadData();
+    }, [loadData, view]);
 
-    if (action === 'withdraw') return <WithdrawView />;
-    if (action === 'deposit') return <DepositView />;
-    if (action === 'pay-registration') return <RegistrationPayView />;
+    if (view === 'withdraw') return <WithdrawView />;
+    if (view === 'deposit') return <DepositView />;
+    if (view === 'pay-registration') return <RegistrationPayView />;
 
     if (loading) {
         return (
@@ -92,7 +92,7 @@ function WalletContent() {
                         {data.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </div>
                     <div className="mt-6 flex gap-3">
-                        <Link href="/member/wallet?action=withdraw&source=wallet" className="btn-lime">
+                        <Link href="/member/wallet?view=withdraw&source=wallet" className="btn-lime">
                             <i className="bi bi-send-fill mr-2"></i> Withdraw Funds
                         </Link>
                         <Link href="/member/transactions" className="btn-ghost">

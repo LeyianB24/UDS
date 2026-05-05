@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { 
+    ArrowLeft, 
+    CheckCircle2, 
+    AlertTriangle, 
+    ShieldCheck, 
+    XCircle,
+    Send,
+    Calculator,
+    Shield
+} from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 interface ApplyViewProps {
     onBack: () => void;
@@ -65,10 +76,12 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
         }
     };
 
-    if (loading || !data) return <div className="p-10 text-center flex flex-col items-center justify-center min-h-[400px]">
-        <div className="w-12 h-12 border-4 border-[#0b2419]/10 border-t-[#a3e635] rounded-full animate-spin"></div>
-        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading application form...</p>
-    </div>;
+    if (loading || !data) return (
+        <div className="p-10 text-center flex flex-col items-center justify-center min-h-[400px]">
+            <div className="w-12 h-12 border-4 border-[#0b2419]/10 border-t-[#a3e635] rounded-full animate-spin"></div>
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading application form...</p>
+        </div>
+    );
 
     const { eligibility, balances, guarantors, settings } = data;
     const maxLimit = balances.savings * settings.max_multiplier;
@@ -86,14 +99,17 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
                     <h1 className="text-3xl font-black text-[#0b2419] tracking-tight">Apply for Loan</h1>
                     <p className="text-sm font-semibold text-gray-400 mb-1">Complete the form below to request a new loan.</p>
                 </div>
-                <button onClick={onBack} className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-black transition-all hover:shadow-md text-[#0b2419]">
-                    <i className="bi bi-arrow-left mr-2"></i> Back
+                <button onClick={onBack} className="px-6 py-2.5 bg-white border border-gray-200 rounded-full text-sm font-black transition-all hover:shadow-md text-[#0b2419] flex items-center gap-2">
+                    <ArrowLeft size={18} /> Back
                 </button>
             </div>
 
             {flash && (
-                <div className={`mb-8 p-4 rounded-2xl flex items-start gap-4 ${flash.type === 'ok' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'} border animate-in fade-in slide-in-from-top-2`}>
-                    <i className={`bi bi-${flash.type === 'ok' ? 'check-circle-fill' : 'exclamation-triangle-fill'} text-xl`}></i>
+                <div className={cn(
+                    "mb-8 p-4 rounded-2xl flex items-start gap-4 border animate-in fade-in slide-in-from-top-2",
+                    flash.type === 'ok' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'
+                )}>
+                    {flash.type === 'ok' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
                     <div className="text-sm font-bold">{flash.msg}</div>
                 </div>
             )}
@@ -101,7 +117,7 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
             {!isEligible && (
                 <div className="mb-8 p-6 bg-red-50 border border-red-100 rounded-3xl animate-in fade-in slide-in-from-top-4">
                     <div className="flex items-center gap-3 mb-4 text-red-700">
-                        <i className="bi bi-shield-lock-fill text-2xl"></i>
+                        <Shield size={24} />
                         <h3 className="text-lg font-black tracking-tight">Ineligibility Notice</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -111,10 +127,13 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
                             { label: 'Reg. Fee Paid', ok: eligibility.regFee, msg: 'KES 1,000 outstanding' },
                             { label: 'No Active Loan', ok: eligibility.noActiveLoan, msg: 'Already have a loan' }
                         ].map((req, i) => (
-                            <div key={i} className={`p-4 rounded-2xl border transition-all ${req.ok ? 'bg-white border-green-200 text-green-600' : 'bg-white/50 border-red-200 text-red-600'}`}>
+                            <div key={i} className={cn(
+                                "p-4 rounded-2xl border transition-all",
+                                req.ok ? "bg-white border-green-200 text-green-600" : "bg-white/50 border-red-200 text-red-600"
+                            )}>
                                 <div className="flex items-center justify-between mb-1">
                                     <span className="text-[10px] font-black uppercase tracking-widest">{req.label}</span>
-                                    <i className={`bi bi-${req.ok ? 'check-circle-fill' : 'x-circle-fill'}`}></i>
+                                    {req.ok ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                 </div>
                                 <div className="text-xs font-bold">{req.ok ? 'Verified' : req.msg}</div>
                             </div>
@@ -124,7 +143,10 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <form onSubmit={handleSubmit} className={`lg:col-span-8 space-y-8 ${!isEligible ? 'opacity-50 pointer-events-none' : ''}`}>
+                <form onSubmit={handleSubmit} className={cn(
+                    "lg:col-span-8 space-y-8",
+                    !isEligible && "opacity-50 pointer-events-none"
+                )}>
                     <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="w-10 h-10 bg-[#a3e635]/20 text-[#0b2419] rounded-xl flex items-center justify-center font-black">1</div>
@@ -214,10 +236,14 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full py-5 bg-[#a3e635] hover:bg-[#bceb3b] text-[#0b2419] rounded-3xl font-black text-lg transition-all shadow-xl hover:-translate-y-1 hover:shadow-[#a3e635]/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:translate-y-0" disabled={submitting || form.guarantor_1 === form.guarantor_2}>
-                        {submitting ? <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-current"></span> : (
+                    <button 
+                        type="submit" 
+                        className="w-full py-5 bg-[#a3e635] hover:bg-[#bceb3b] text-[#0b2419] rounded-3xl font-black text-lg transition-all shadow-xl hover:-translate-y-1 hover:shadow-[#a3e635]/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:hover:translate-y-0" 
+                        disabled={submitting || (form.guarantor_1 !== '' && form.guarantor_1 === form.guarantor_2)}
+                    >
+                        {submitting ? <div className="w-6 h-6 border-4 border-[#0b2419]/10 border-t-[#0b2419] rounded-full animate-spin"></div> : (
                             <>
-                                <i className="bi bi-send-check-fill"></i>
+                                <Send size={20} />
                                 <span>SUBMIT LOAN APPLICATION</span>
                             </>
                         )}
@@ -230,7 +256,7 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
                 <div className="lg:col-span-4 sticky top-8 space-y-6">
                     <div className="bg-[#0b2419] rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12">
-                            <i className="bi bi-calculator text-9xl"></i>
+                            <Calculator size={120} />
                         </div>
                         <div className="relative z-10">
                             <h4 className="text-[10px] font-black text-[#a3e635] uppercase tracking-widest mb-6">Financial Preview</h4>
@@ -260,7 +286,7 @@ export default function ApplyView({ onBack, initialType = 'Personal', initialAmo
                     </div>
 
                     <div className="p-6 bg-slate-50 border border-slate-100 rounded-3xl shadow-sm text-center">
-                        <i className="bi bi-patch-check-fill text-[#0b2419] text-3xl mb-3"></i>
+                        <ShieldCheck size={48} className="text-[#0b2419] mx-auto mb-3" />
                         <h5 className="font-black text-[#0b2419] mb-2">Smart Validation</h5>
                         <p className="text-xs font-semibold text-slate-500 leading-relaxed">
                             Your savings of <span className="text-[#0b2419] font-black">KES {balances.savings.toLocaleString()}</span> allows a capacity of <span className="text-[#0b2419] font-black">KES {maxLimit.toLocaleString()}</span>.

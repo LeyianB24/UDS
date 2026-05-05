@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Wallet, 
@@ -42,12 +43,14 @@ const stagger = {
     }
 };
 
-export default function LoansPage() {
+function LoansContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const view = searchParams.get('view') || 'list';
+    const id = searchParams.get('id');
+
     const [data, setData] = useState<LoanData | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const [currentView, setCurrentView] = useState<'list' | 'apply' | 'repay'>('list');
-    const [repayLoanId, setRepayLoanId] = useState<string | null>(null);
 
     // Modal state for quick apply (matching original functionality)
     const [showApplyModal, setShowApplyModal] = useState(false);
@@ -89,12 +92,12 @@ export default function LoansPage() {
     const modalInterest = modalAmount * calcRate * (modalMonths / 12);
     const modalTotal = modalAmount + modalInterest;
 
-    if (currentView === 'apply') {
-        return <ApplyView onBack={() => setCurrentView('list')} initialType={loanType} initialAmount={modalAmount} initialMonths={modalMonths} />;
+    if (view === 'apply') {
+        return <ApplyView onBack={() => router.push('/member/loans')} initialType={loanType} initialAmount={modalAmount} initialMonths={modalMonths} />;
     }
 
-    if (currentView === 'repay') {
-        return <RepayView loanId={repayLoanId} onBack={() => setCurrentView('list')} />;
+    if (view === 'repay') {
+        return <RepayView loanId={id || (active_loan?.loan_id.toString() || null)} onBack={() => router.push('/member/loans')} />;
     }
 
     return (
@@ -114,7 +117,7 @@ export default function LoansPage() {
                 <div className="flex flex-wrap gap-3">
                     {wallet_balance > 0 && (
                         <Link 
-                            href="/member/withdraw?type=loans&source=loans" 
+                            href="/member/wallet?view=withdraw&type=loans&source=loans" 
                             className="inline-flex items-center gap-2 px-6 py-3 bg-[#0b2419] text-white rounded-2xl font-bold hover:bg-[#154330] transition-all shadow-lg hover:shadow-[#0b2419]/20"
                         >
                             <Wallet size={18} />
@@ -241,16 +244,13 @@ export default function LoansPage() {
                                     </div>
                                     
                                     <div className="lg:col-span-5 flex flex-col sm:flex-row gap-3">
-                                        <button 
-                                            onClick={() => {
-                                                setRepayLoanId(active_loan.loan_id.toString());
-                                                setCurrentView('repay');
-                                            }}
+                                        <Link 
+                                            href={`/member/loans?view=repay&id=${active_loan.loan_id}`}
                                             className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-[#a3e635] text-[#0b2419] rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#bceb3b] transition-all hover:-translate-y-1 shadow-xl shadow-[#a3e635]/20"
                                         >
                                             <Smartphone size={16} />
                                             <span>M-Pesa PAY</span>
-                                        </button>
+                                        </Link>
                                         <button 
                                             onClick={() => setShowRepayModal(true)}
                                             className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
@@ -538,12 +538,9 @@ export default function LoansPage() {
                                     </div>
                                 </div>
 
-                                <button 
-                                    onClick={() => {
-                                        setShowApplyModal(false);
-                                        setCurrentView('apply');
-                                    }}
-                                    disabled={isExceeding || modalAmount <= 0}
+                                <Link 
+                                    href={`/member/loans?view=apply&type=${loanType}&amount=${modalAmount}&months=${modalMonths}`}
+                                    onClick={() => setShowApplyModal(false)}
                                     className={cn(
                                         "w-full h-16 rounded-[22px] font-black text-sm uppercase tracking-widest flex items-center justify-center transition-all shadow-xl",
                                         isExceeding || modalAmount <= 0 
@@ -552,7 +549,7 @@ export default function LoansPage() {
                                     )}
                                 >
                                     Proceed to Application
-                                </button>
+                                </Link>
                             </div>
                         </motion.div>
                     </div>
@@ -633,5 +630,17 @@ export default function LoansPage() {
                 )}
             </AnimatePresence>
         </motion.div>
+    );
+}
+
+export default function LoansPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-12 h-12 border-4 border-[#0b2419]/10 border-t-[#a3e635] rounded-full animate-spin"></div>
+            </div>
+        }>
+            <LoansContent />
+        </Suspense>
     );
 }
