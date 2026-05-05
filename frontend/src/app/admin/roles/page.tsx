@@ -245,10 +245,10 @@ export default function AdminRolesPage() {
                           
                           {!isSuperadmin && (
                               <div className="flex gap-2">
-                                  <button onClick={openEditModal} className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:text-[var(--brand-forest)] hover:border-[var(--brand-forest)] transition-colors shadow-sm">
+                                  <button title="Edit role" aria-label="Edit role" onClick={openEditModal} className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:text-[var(--brand-forest)] hover:border-[var(--brand-forest)] transition-colors shadow-sm">
                                       <Edit2 size={16} />
                                   </button>
-                                  <button onClick={handleDelete} className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm">
+                                  <button title="Delete role" aria-label="Delete role" onClick={handleDelete} className="w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm">
                                       <Trash2 size={16} />
                                   </button>
                               </div>
@@ -367,11 +367,11 @@ export default function AdminRolesPage() {
             <form onSubmit={handleEditSubmit} className="space-y-4">
                <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Role Name</label>
-                  <input required type="text" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-[var(--brand-forest)]/20 focus:border-[var(--brand-forest)] outline-none" value={formData.role_name} onChange={e => setFormData({...formData, role_name: e.target.value})} />
+                  <input required type="text" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-[var(--brand-forest)]/20 focus:border-[var(--brand-forest)] outline-none" title="Role name" aria-label="Role name" value={formData.role_name} onChange={e => setFormData({...formData, role_name: e.target.value})} />
                </div>
                <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2 block">Description</label>
-                  <textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-[var(--brand-forest)]/20 focus:border-[var(--brand-forest)] outline-none resize-none h-24" value={formData.role_desc} onChange={e => setFormData({...formData, role_desc: e.target.value})} />
+                  <textarea required className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-[var(--brand-forest)]/20 focus:border-[var(--brand-forest)] outline-none resize-none h-24" title="Role description" aria-label="Role description" value={formData.role_desc} onChange={e => setFormData({...formData, role_desc: e.target.value})} />
                </div>
                <div className="pt-4">
                   <button type="submit" className="w-full py-4 bg-[var(--brand-forest)] text-lime-400 rounded-2xl font-black uppercase tracking-widest text-sm hover:bg-green-900 transition-colors shadow-lg shadow-green-900/20">

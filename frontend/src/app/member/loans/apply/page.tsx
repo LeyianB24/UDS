@@ -129,7 +129,7 @@ export default function ApplyLoanPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-2">Loan Category</label>
-                                <select 
+                                <select title="Select option" aria-label="Select option" 
                                     className="w-full px-5 py-4 bg-bg border border-bdr rounded-2xl font-black text-t1 focus:bg-white focus:border-fs focus:shadow-md transition-all outline-none"
                                     value={form.loan_type} onChange={e => setForm({...form, loan_type: e.target.value})}
                                 >
@@ -178,7 +178,7 @@ export default function ApplyLoanPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-2">Primary Guarantor</label>
-                                <select 
+                                <select title="Select option" aria-label="Select option" 
                                     className="w-full px-5 py-4 bg-bg border border-bdr rounded-2xl font-black text-t1 focus:bg-white focus:border-fs focus:shadow-md transition-all outline-none"
                                     value={form.guarantor_1} onChange={e => setForm({...form, guarantor_1: e.target.value})} required
                                 >
@@ -190,7 +190,7 @@ export default function ApplyLoanPage() {
                             </div>
                             <div>
                                 <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest block mb-2">Secondary Guarantor</label>
-                                <select 
+                                <select title="Select option" aria-label="Select option" 
                                     className="w-full px-5 py-4 bg-bg border border-bdr rounded-2xl font-black text-t1 focus:bg-white focus:border-fs focus:shadow-md transition-all outline-none"
                                     value={form.guarantor_2} onChange={e => setForm({...form, guarantor_2: e.target.value})} required
                                 >

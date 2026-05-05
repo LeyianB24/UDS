@@ -197,7 +197,7 @@ export default function StatementsPage() {
                                 {flash.type === 'ok' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
                                 <p className="text-sm font-bold tracking-tight">{flash.msg}</p>
                             </div>
-                            <button onClick={() => setFlash(null)} className="opacity-40 hover:opacity-100 p-2">
+                            <button onClick={() => setFlash(null)} title="Dismiss" aria-label="Dismiss notification" className="opacity-40 hover:opacity-100 p-2">
                                 <X size={20} />
                             </button>
                         </motion.div>
@@ -427,11 +427,9 @@ export default function StatementsPage() {
                                     <Info size={14} /> Formal statement downloads contain extended audit trails.
                                 </p>
                                 <div className="flex gap-2">
-                                    <button className="w-10 h-10 border border-slate-100 bg-white rounded-xl flex items-center justify-center text-slate-400 hover:text-[#0b2419] transition-all">
-                                        <ChevronRight size={16} className="rotate-180" />
+                                    <button title="Previous page" aria-label="Previous page" className="w-10 h-10 border border-slate-100 bg-white rounded-xl flex items-center justify-center text-slate-400 hover:text-[#0b2419] transition-all"><ChevronRight size={16} className="rotate-180" />
                                     </button>
-                                    <button className="w-10 h-10 border border-slate-100 bg-white rounded-xl flex items-center justify-center text-slate-400 hover:text-[#0b2419] transition-all">
-                                        <ChevronRight size={16} />
+                                    <button title="Next page" aria-label="Next page" className="w-10 h-10 border border-slate-100 bg-white rounded-xl flex items-center justify-center text-slate-400 hover:text-[#0b2419] transition-all"><ChevronRight size={16} />
                                     </button>
                                 </div>
                             </div>

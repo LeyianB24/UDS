@@ -55,7 +55,7 @@ export function ChatWindow({ isAdmin = false }: { isAdmin?: boolean }) {
             <ShieldCheck size={14} className="text-emerald-500" />
             <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Encrypted Thread</span>
           </div>
-          <button className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-2">
+          <button title="More options" aria-label="More options" className="text-[var(--text-muted)] hover:text-[var(--text-main)] p-2">
             <MoreHorizontal size={20} />
           </button>
         </div>
@@ -121,11 +121,9 @@ export function ChatWindow({ isAdmin = false }: { isAdmin?: boolean }) {
           className="relative flex items-center gap-4 bg-[var(--bg-primary)] p-2 rounded-[32px] border border-[var(--border-color)] focus-within:border-[var(--brand-lime)]/50 focus-within:ring-4 focus-within:ring-[var(--brand-lime)]/10 transition-all"
         >
           <div className="flex items-center gap-2 pl-4 shrink-0">
-             <button type="button" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-               <Smile size={20} />
+             <button type="button" title="Insert emoji" aria-label="Insert emoji" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><Smile size={20} />
              </button>
-             <button type="button" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors">
-               <Paperclip size={20} />
+             <button type="button" title="Attach file" aria-label="Attach file" className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"><Paperclip size={20} />
              </button>
           </div>
           
@@ -140,7 +138,7 @@ export function ChatWindow({ isAdmin = false }: { isAdmin?: boolean }) {
           <button 
             type="submit"
             disabled={!inputMessage.trim() || sending}
-            className="w-12 h-12 bg-[var(--brand-forest)] text-[var(--brand-lime)] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
+            className="w-12 h-12 title="Send message" aria-label="Send message" bg-[var(--brand-forest)] text-[var(--brand-lime)] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
           >
             <Send size={20} />
           </button>

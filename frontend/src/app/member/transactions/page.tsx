@@ -322,7 +322,7 @@ export default function TransactionsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                         <div className="group">
                             <label className="filter-lbl">Type</label>
-                            <select value={type} onChange={e => setType(e.target.value)} className="filter-ctrl">
+                            <select title="Filter by type" aria-label="Filter by type" value={type} onChange={e => setType(e.target.value)} className="filter-ctrl">
                                 <option value="">All Types</option>
                                 <option value="deposit">Savings Deposit</option>
                                 <option value="contribution">Contribution</option>
@@ -334,19 +334,19 @@ export default function TransactionsPage() {
                         </div>
                         <div>
                             <label className="filter-lbl">Specific Date</label>
-                            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="filter-ctrl" />
+                            <input title="Filter by date" aria-label="Filter by date" type="date" value={date} onChange={e => setDate(e.target.value)} className="filter-ctrl" />
                         </div>
                         <div>
                             <label className="filter-lbl">From</label>
-                            <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="filter-ctrl" />
+                            <input title="Filter from date" aria-label="Filter from date" type="date" value={from} onChange={e => setFrom(e.target.value)} className="filter-ctrl" />
                         </div>
                         <div>
                             <label className="filter-lbl">To</label>
-                            <input type="date" value={to} onChange={e => setTo(e.target.value)} className="filter-ctrl" />
+                            <input title="Filter to date" aria-label="Filter to date" type="date" value={to} onChange={e => setTo(e.target.value)} className="filter-ctrl" />
                         </div>
                         <div className="flex gap-2">
                             <button className="btn-apply w-full" onClick={loadData}>Apply</button>
-                            <button className="btn-clear-filter" onClick={handleClear}><i className="bi bi-x-lg"></i></button>
+                            <button title="Clear filters" aria-label="Clear filters" className="btn-clear-filter" onClick={handleClear}><i className="bi bi-x-lg"></i></button>
                         </div>
                     </div>
                 </div>

@@ -157,7 +157,7 @@ export default function AdminOnboardingPage() {
                   <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Gender</label>
                   <div className="relative">
                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                     <select name="gender" className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold appearance-none cursor-pointer focus:bg-white focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 outline-none transition-all">
+                     <select name="gender" title="Select gender" aria-label="Select gender" className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold appearance-none cursor-pointer focus:bg-white focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 outline-none transition-all">
                         <option value="male">Male</option>
                         <option value="female">Female</option>
                      </select>
@@ -165,7 +165,7 @@ export default function AdminOnboardingPage() {
                </div>
                <div>
                   <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Date of Birth</label>
-                  <input type="date" name="dob" className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 outline-none transition-all" />
+                  <input type="date" name="dob" title="Date of birth" aria-label="Date of birth" className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-bold focus:bg-white focus:ring-2 focus:ring-lime-500/20 focus:border-lime-500 outline-none transition-all" />
                </div>
                <div>
                   <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">Occupation</label>
