@@ -261,7 +261,10 @@ export default function MembersPage() {
                             <UserX size={14} /> Suspend
                           </button>
                         )}
-                        <button className="h-11 w-11 bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border-color)] rounded-xl flex items-center justify-center hover:bg-[var(--brand-forest)] hover:text-white transition-all active:scale-95">
+                        <button 
+                          title="More options"
+                          aria-label="More options"
+                          className="h-11 w-11 bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border-color)] rounded-xl flex items-center justify-center hover:bg-[var(--brand-forest)] hover:text-white transition-all active:scale-95">
                           <MoreVertical size={18} />
                         </button>
                       </div>

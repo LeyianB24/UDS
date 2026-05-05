@@ -15,7 +15,7 @@ export async function GET() {
         const balances = await getBalances(memberId);
 
         // Fetch member phone for pre-filling
-        const [members]: any = await pool.execute(`SELECT phone FROM members WHERE member_id = ?`, [memberId]);
+        const [members] = await pool.execute(`SELECT phone FROM members WHERE member_id = ?`, [memberId]) as [{ phone: string }[], unknown];
 
         return NextResponse.json({
             status: 'success',
@@ -25,8 +25,8 @@ export async function GET() {
             }
         });
 
-    } catch (error: any) {
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ status: 'error', message: error instanceof Error ? error.message : 'Internal error' }, { status: 500 });
     }
 }
 
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
             data: { ref }
         });
 
-    } catch (error: any) {
-        return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ status: 'error', message: error instanceof Error ? error.message : 'Internal error' }, { status: 500 });
     }
 }
