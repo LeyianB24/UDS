@@ -70,14 +70,14 @@ export function LandingFooter() {
                         <div className="ft-col-heading">Follow Us</div>
                         <div className="ft-social-label">Stay connected</div>
                         <div className="ft-socials">
-                            <a href="https://wa.me/254755758208" className="ft-social-btn" target="_blank" rel="noreferrer" title="WhatsApp">
+                            <a href="https://wa.me/254755758208" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="WhatsApp">
                                 <i className="bi bi-whatsapp"></i>
                             </a>
-                            <a href="https://facebook.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noreferrer" title="Facebook"><i className="bi bi-facebook"></i></a>
-                            <a href="https://twitter.com/umojadrivers" className="ft-social-btn" target="_blank" rel="noreferrer" title="Twitter/X"><i className="bi bi-twitter-x"></i></a>
-                            <a href="https://instagram.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noreferrer" title="Instagram"><i className="bi bi-instagram"></i></a>
-                            <a href="https://youtube.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noreferrer" title="YouTube"><i className="bi bi-youtube"></i></a>
-                            <a href="https://tiktok.com/@umojadriverssacco" className="ft-social-btn" target="_blank" rel="noreferrer" title="TikTok"><i className="bi bi-tiktok"></i></a>
+                            <a href="https://facebook.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="Facebook"><i className="bi bi-facebook"></i></a>
+                            <a href="https://twitter.com/umojadrivers" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="Twitter/X"><i className="bi bi-twitter-x"></i></a>
+                            <a href="https://instagram.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="Instagram"><i className="bi bi-instagram"></i></a>
+                            <a href="https://youtube.com/umojadriverssacco" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="YouTube"><i className="bi bi-youtube"></i></a>
+                            <a href="https://tiktok.com/@umojadriverssacco" className="ft-social-btn" target="_blank" rel="noopener noreferrer" title="TikTok"><i className="bi bi-tiktok"></i></a>
                         </div>
                     </div>
                 </div>

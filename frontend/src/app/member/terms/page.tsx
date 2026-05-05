@@ -40,7 +40,7 @@ export default function TermsPage() {
                 <div className="legal-content">
                     <h2>1. Acceptance of Terms</h2>
                     <p>
-                        By registering as a member of Umoja Drivers Sacco ("the Sacco"), you agree to be bound by these Terms of Service, 
+                        By registering as a member of Umoja Drivers Sacco (&quot;the Sacco&quot;), you agree to be bound by these Terms of Service,
                         all applicable laws and regulations, and agree that you are responsible for compliance with any applicable local laws.
                     </p>
                     
@@ -63,7 +63,7 @@ export default function TermsPage() {
                     <h2>3. Member Contributions</h2>
                     <h3>3.1 Savings Contributions</h3>
                     <p>
-                        Members are required to make regular savings contributions as determined by the Sacco's bylaws. 
+                        Members are required to make regular savings contributions as determined by the Sacco&apos;s bylaws.
                         A minimum balance of KES 500 must be maintained in your savings account at all times.
                     </p>
                     

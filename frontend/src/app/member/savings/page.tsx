@@ -108,7 +108,7 @@ export default function SavingsPage() {
                 cornerRadius: 12,
                 displayColors: false,
                 titleFont: { size: 10, weight: 'bold' as const },
-                bodyFont: { size: 12, weight: 'black' as const }
+                bodyFont: { size: 12, weight: 'bold' as const }
             }
         },
         scales: {

@@ -35,7 +35,7 @@ export default function PrivacyPolicy() {
                     
                     <h2>1. Introduction</h2>
                     <p>
-                        Umoja Drivers Sacco ("we," "us," or "the Sacco") is committed to protecting your privacy and personal data. 
+                        Umoja Drivers Sacco (&quot;we,&quot; &quot;us,&quot; or &quot;the Sacco&quot;) is committed to protecting your privacy and personal data. 
                         This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our 
                         platform and services.
                     </p>
@@ -164,7 +164,7 @@ export default function PrivacyPolicy() {
                     <h3>8.2 Right to Rectification</h3>
                     <p>You can update or correct inaccurate information through your account settings or by contacting us.</p>
                     
-                    <h3>8.3 Right to Erasure ("Right to be Forgotten")</h3>
+                    <h3>8.3 Right to Erasure (&quot;Right to be Forgotten&quot;)</h3>
                     <p>You can request deletion of your data, subject to legal retention requirements.</p>
                     
                     <h3>8.4 Right to Data Portability</h3>
@@ -210,10 +210,10 @@ export default function PrivacyPolicy() {
                         confidentiality agreements and only process data as instructed.
                     </p>
                     
-                    <h2>11. Children's Privacy</h2>
+                    <h2>11. Children&apos;s Privacy</h2>
                     <p>
-                        Our services are not intended for individuals under 18 years of age. We do not knowingly collect 
-                        personal information from children. If you believe we have inadvertently collected such information, 
+                        Our services are not intended for individuals under 18 years of age. We do not knowingly collect
+                        personal information from children. If you believe we have inadvertently collected such information,
                         please contact us immediately.
                     </p>
                     
@@ -247,7 +247,7 @@ export default function PrivacyPolicy() {
                     <ul className="list-disc">
                         <li>Email notification to your registered address</li>
                         <li>Platform notification upon login</li>
-                        <li>Posting the updated policy with a new "Last Updated" date</li>
+                        <li>Posting the updated policy with a new &quot;Last Updated&quot; date</li>
                     </ul>
                     
                     <h2>15. Contact Us</h2>
