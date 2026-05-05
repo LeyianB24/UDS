@@ -204,7 +204,7 @@ export default function SettingsPage() {
                             {flash.msg}
                         </div>
                     </div>
-                    <button onClick={() => setFlash(null)} className="opacity-40 hover:opacity-100 p-2">
+                    <button title="Dismiss notification" aria-label="Dismiss notification" onClick={() => setFlash(null)} className="opacity-40 hover:opacity-100 p-2">
                         <X size={20} />
                     </button>
                 </motion.div>
@@ -361,7 +361,7 @@ export default function SettingsPage() {
                                                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Gender Class</label>
                                                     <select 
                                                         className="w-full h-14 bg-slate-50 border border-transparent rounded-[20px] px-6 text-sm font-black text-[#0b2419] focus:bg-white focus:border-[#a3e635]/30 outline-none transition-all shadow-inner" 
-                                                        value={profileForm.gender} 
+                                                        value={profileForm.gender} title="Select gender" aria-label="Select gender" 
                                                         onChange={e => setProfileForm({...profileForm, gender: e.target.value})}
                                                     >
                                                         <option value="male">Male Alpha</option>
@@ -439,7 +439,7 @@ export default function SettingsPage() {
                                                         value={securityForm.current_password}
                                                         onChange={e => setSecurityForm({...securityForm, current_password: e.target.value})}
                                                     />
-                                                    <button 
+                                                    title="Toggle password visibility" aria-label="Toggle password visibility" <button 
                                                         type="button" 
                                                         className="absolute right-5 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-[#0b2419] transition-colors" 
                                                         onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}

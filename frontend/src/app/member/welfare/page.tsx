@@ -281,7 +281,7 @@ export default function WelfarePage() {
                                     <h3 className="text-2xl font-black text-t1 tracking-tighter">Report Situation</h3>
                                     <p className="text-sm font-semibold text-gray-400">Request welfare support for a specific occurrence.</p>
                                 </div>
-                                <button onClick={() => setShowModal(false)} className="w-10 h-10 bg-bg text-t3 rounded-full flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors">
+                                <button title="Close" aria-label="Close" onClick={() => setShowModal(false)} className="w-10 h-10 bg-bg text-t3 rounded-full flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors">
                                     <i className="bi bi-x-lg text-sm"></i>
                                 </button>
                             </div>
