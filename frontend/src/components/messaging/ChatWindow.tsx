@@ -137,8 +137,10 @@ export function ChatWindow({ isAdmin = false }: { isAdmin?: boolean }) {
 
           <button 
             type="submit"
+            title="Send message"
+            aria-label="Send message"
             disabled={!inputMessage.trim() || sending}
-            className="w-12 h-12 title="Send message" aria-label="Send message" bg-[var(--brand-forest)] text-[var(--brand-lime)] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
+            className="w-12 h-12 bg-[var(--brand-forest)] text-[var(--brand-lime)] rounded-full flex items-center justify-center shadow-lg shadow-emerald-950/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
           >
             <Send size={20} />
           </button>
